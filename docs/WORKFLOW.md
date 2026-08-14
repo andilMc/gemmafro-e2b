@@ -127,6 +127,8 @@ train.head(3)
 
 ## Phase 1 — Analyse exploratoire des données (EDA)
 
+Notebook prêt à l'emploi : [`notebooks/01_eda.ipynb`](../notebooks/01_eda.ipynb) (couvre les points ci-dessous, exécutable indépendamment de `00_setup_environment.ipynb`).
+
 - [ ] Charger `Train.csv`, `Val.csv`, `Test.csv` et vérifier les types, valeurs manquantes, doublons d'ID.
 - [ ] Confirmer la distribution par langue (`subset`) — déjà connue : très déséquilibrée (`Eng_Uga` ≈ 7 600 lignes vs `Amh_Eth` ≈ 1 800). **Ce déséquilibre est le premier risque du projet** : sans correction, le modèle fine-tuné répondra mieux en anglais et en akan qu'en amharique/luganda.
 - [ ] Étudier la longueur des questions/réponses (en tokens, avec le tokenizer de Gemma) par langue — les scripts non-latins (amharique) et les langues agglutinantes peuvent produire des séquences beaucoup plus longues après tokenisation.
