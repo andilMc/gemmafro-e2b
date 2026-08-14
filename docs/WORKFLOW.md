@@ -2,7 +2,7 @@
 
 > Méthode retenue : **fine-tuning d'un LLM instruction-tuned** (Gemma E2B), et non les baselines TF-IDF / mT5-seq2seq du notebook de départ. Ce document remplace le plan du notebook starter par un workflow adapté à un modèle **causal (decoder-only)** comme Gemma.
 >
-> ⚠️ Note : je n'ai pas de fiche technique fiable pour "Gemma 4 E2B" dans mes données d'entraînement (les modèles Gemma que je connais avec un suffixe E2B/E4B sont la famille **Gemma 3n**, sortie en 2025). Avant de commencer, vérifiez sur Hugging Face (`transformers`, carte du modèle) le nom exact du checkpoint, la longueur de contexte, le template de chat et les tokens spéciaux — le reste du workflow reste valable quel que soit le numéro de version exact.
+> ✅ Checkpoint confirmé : **`google/gemma-4-E2B-it`**. Chargement testé avec succès en 4-bit sur T4 (empreinte mémoire ≈ 6,7 Go) lors de l'exécution de `notebooks/00_setup_environment.ipynb` — voir Phase 0.
 
 Voir [PROJET.md](PROJET.md) pour le contexte du challenge et [FICHIERS.md](FICHIERS.md) pour le détail des fichiers fournis.
 
@@ -74,14 +74,14 @@ login(token=userdata.get('HF_TOKEN'))
 ```
 
 ### Étape 11 — Accepter la licence du modèle Gemma sur Hugging Face
-Ouvrir la page du modèle exact que vous utilisez sur `huggingface.co` (vérifier le nom précis — cf. avertissement en tête de ce document) et cliquer sur *Agree and access repository*. Sans cette étape, le chargement du modèle échouera même avec un token valide.
+Ouvrir la page du modèle [`google/gemma-4-E2B-it`](https://huggingface.co/google/gemma-4-E2B-it) sur `huggingface.co` et cliquer sur *Agree and access repository*. Sans cette étape, le chargement du modèle échouera même avec un token valide.
 
 ### Étape 12 — Test de chargement minimal du modèle en 4-bit
 ```python
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
-MODEL_NAME = "google/gemma-3n-E2B-it"  # ⚠️ à remplacer par le nom exact du checkpoint vérifié sur HF
+MODEL_NAME = "google/gemma-4-E2B-it"
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
