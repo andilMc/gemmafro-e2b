@@ -39,17 +39,21 @@ Autoriser l'accès quand Colab le demande. Tout ce qui doit survivre à la sessi
 ```python
 import os
 
-PROJECT_DIR = '/content/drive/MyDrive/multilingual_health_qa'
-for sub in ['data', 'checkpoints', 'logs', 'submissions']:
+PROJECT_DIR = '/content/drive/MyDrive/gemmafro-e2b'
+for sub in ['checkpoints', 'logs', 'submissions']:
     os.makedirs(f'{PROJECT_DIR}/{sub}', exist_ok=True)
 
 print(os.listdir(PROJECT_DIR))
 ```
+Pas de dossier `data/` ici : les CSV viennent directement du dépôt Git cloné à l'étape suivante, pas besoin de les dupliquer sur Drive.
 
-### Étape 7 — Déposer les CSV du projet sur Drive (une seule fois)
-Les CSV vivent désormais dans `data/` du dépôt Git ([github.com/andilMc/gemmafro-e2b](https://github.com/andilMc/gemmafro-e2b)). Deux options :
-- **Cloner le dépôt directement dans Colab** (`!git clone https://github.com/andilMc/gemmafro-e2b.git`) et lire les CSV depuis `gemmafro-e2b/data/` — le plus simple, pas de copie manuelle.
-- Ou, si vous préférez isoler les gros fichiers de données du dépôt Git à terme, les copier une fois vers `multilingual_health_qa/data/` sur Drive (glisser-déposer via l'interface web) et ne plus les re-téléverser ensuite.
+### Étape 7 — Cloner le dépôt du projet
+Les CSV, notebooks et docs vivent dans le dépôt Git ([github.com/andilMc/gemmafro-e2b](https://github.com/andilMc/gemmafro-e2b)). Le cloner directement dans Colab :
+```python
+!git clone https://github.com/andilMc/gemmafro-e2b.git /content/gemmafro-e2b
+DATA_DIR = '/content/gemmafro-e2b/data'
+```
+Les CSV sont alors accessibles via `DATA_DIR` sans copie manuelle. Un notebook prêt à l'emploi pour toute la Phase 0 (étapes 4 à 14) est disponible dans [`notebooks/00_setup_environment.ipynb`](../notebooks/00_setup_environment.ipynb).
 
 ### Étape 8 — Installer les dépendances
 À refaire en tête de notebook à **chaque nouvelle session** (l'environnement Python de Colab n'est pas persistant) :
