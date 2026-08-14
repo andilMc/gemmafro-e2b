@@ -1,0 +1,19 @@
+# Environnements / caches Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Sorties de fine-tuning (restent sur Google Drive, pas dans le repo — cf. WORKFLOW.md)
+checkpoints/
+logs/
+*.safetensors
+*.bin
+mt5-finetuned-health-qa/
+gemma-finetuned-health-qa/
+
+# Fichiers de soumission générés localement
+submission_*.csv
+
+# Divers
+.DS_Store
+.env
