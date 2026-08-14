@@ -47,7 +47,9 @@ print(os.listdir(PROJECT_DIR))
 ```
 
 ### Étape 7 — Déposer les CSV du projet sur Drive (une seule fois)
-Via l'interface web de Google Drive, glisser-déposer `Train.csv`, `Val.csv`, `Test.csv`, `SampleSubmission.csv` dans le dossier `multilingual_health_qa/data/`. Ne pas les re-téléverser à chaque session — une fois sur Drive, ils sont accessibles à chaque nouveau montage.
+Les CSV vivent désormais dans `data/` du dépôt Git ([github.com/andilMc/gemmafro-e2b](https://github.com/andilMc/gemmafro-e2b)). Deux options :
+- **Cloner le dépôt directement dans Colab** (`!git clone https://github.com/andilMc/gemmafro-e2b.git`) et lire les CSV depuis `gemmafro-e2b/data/` — le plus simple, pas de copie manuelle.
+- Ou, si vous préférez isoler les gros fichiers de données du dépôt Git à terme, les copier une fois vers `multilingual_health_qa/data/` sur Drive (glisser-déposer via l'interface web) et ne plus les re-téléverser ensuite.
 
 ### Étape 8 — Installer les dépendances
 À refaire en tête de notebook à **chaque nouvelle session** (l'environnement Python de Colab n'est pas persistant) :
