@@ -137,6 +137,8 @@ Notebook prêt à l'emploi : [`notebooks/01_eda.ipynb`](../notebooks/01_eda.ipyn
 
 ## Phase 2 — Construction du dataset d'instruction-tuning
 
+Notebook prêt à l'emploi : [`notebooks/02_build_dataset.ipynb`](../notebooks/02_build_dataset.ipynb) (couvre les points ci-dessous ; sauvegarde le résultat sur Drive pour la Phase 3).
+
 Contrairement à un seq2seq (mT5), Gemma attend un **format de chat** avec des rôles (`user` / `model`). Étapes :
 
 - [ ] Définir un template de prompt unique, incluant le **nom de la langue cible** (comme dans le notebook starter) pour conditionner explicitement la génération, par ex. :
