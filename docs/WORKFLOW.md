@@ -154,6 +154,8 @@ Contrairement à un seq2seq (mT5), Gemma attend un **format de chat** avec des r
 
 ## Phase 3 — Fine-tuning (LoRA / QLoRA)
 
+Notebook prêt à l'emploi : [`notebooks/03_finetune.ipynb`](../notebooks/03_finetune.ipynb) (charge `train_balanced.jsonl`/`dev_split.jsonl` produits en Phase 2, entraîne, sauvegarde l'adaptateur LoRA final sur Drive).
+
 - [ ] Charger le modèle en 4-bit (`bitsandbytes`, `BitsAndBytesConfig`) pour économiser la VRAM.
 - [ ] Configurer LoRA (`peft.LoraConfig`) : cibler les projections d'attention et du MLP (`q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, `down_proj`), rang typique `r=16` à `64`, `lora_alpha = 2×r`, `dropout ≈ 0.05`.
 - [ ] Entraîner avec `trl.SFTTrainer` (ou `transformers.Trainer` + collator maison) :
