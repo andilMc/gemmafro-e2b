@@ -14,6 +14,9 @@ gemma-finetuned-health-qa/
 # Fichiers de soumission générés localement
 submission_*.csv
 
+# Copie locale complète du dossier Drive (checkpoints, données traitées, résultats...)
+/results/
+
 # Divers
 .DS_Store
 .env

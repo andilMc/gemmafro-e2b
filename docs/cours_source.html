@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cours complet — Comprendre notre projet d'IA</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2.2cm 1.9cm 2cm 1.9cm;
+    @bottom-center { content: counter(page); font-size: 10px; color: #8a8578; }
+  }
+  @page :first {
+    @bottom-center { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #fbf8f2;
+    color: #2b2a26;
+    font-family: "Noto Sans", "DejaVu Sans", sans-serif;
+    font-size: 12.3px;
+    line-height: 1.75;
+    letter-spacing: 0.012em;
+  }
+  h1, h2, h3, h4 { font-family: "Noto Sans", "DejaVu Sans", sans-serif; font-weight: 700; color: #1c1b17; line-height: 1.3; }
+  p, li { max-width: 620px; }
+  .cover {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    page-break-after: always;
+  }
+  .cover .eyebrow { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #7a6a3f; font-weight: 700; margin-bottom: 10px; }
+  .cover h1 { font-size: 30px; margin: 0 0 14px 0; max-width: 560px; }
+  .cover .subtitle { font-size: 15px; color: #4a473e; max-width: 560px; margin-bottom: 30px; }
+  .cover .meta { font-size: 11.5px; color: #6b675c; border-top: 2px solid #d8cfa9; padding-top: 14px; max-width: 420px; }
+  .cover .meta div { margin-bottom: 4px; }
+  .badge-row { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+  .badge { background: #eee3bd; color: #5c4d1f; font-size: 10.5px; font-weight: 700; padding: 5px 11px; border-radius: 20px; }
+
+  nav.toc { page-break-after: always; }
+  nav.toc h2 { font-size: 20px; border-bottom: 3px solid #1c1b17; padding-bottom: 8px; margin-bottom: 18px; }
+  nav.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: partie; }
+  nav.toc > ol > li { counter-increment: partie; margin-bottom: 10px; font-size: 12.8px; font-weight: 700; }
+  nav.toc > ol > li::before { content: "Partie " counter(partie) " — "; color: #7a6a3f; }
+  nav.toc a { color: #1c1b17; text-decoration: none; }
+  nav.toc a::after { content: leader(dotted) target-counter(attr(href), page); color: #8a8578; font-weight: 400; }
+
+  section.partie { page-break-before: always; }
+  .partie-eyebrow { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #7a6a3f; font-weight: 700; margin-bottom: 4px; }
+  h2.partie-titre { font-size: 21px; margin: 0 0 18px 0; border-bottom: 3px solid #1c1b17; padding-bottom: 10px; }
+  h3 { font-size: 14.5px; margin-top: 26px; margin-bottom: 8px; color: #4a3f1a; }
+  h4 { font-size: 12.8px; margin-top: 16px; margin-bottom: 6px; }
+
+  .en-une-phrase {
+    background: #1c1b17; color: #fbf8f2; border-radius: 10px;
+    padding: 12px 16px; font-size: 12.5px; font-weight: 600; margin-bottom: 18px;
+  }
+  .en-une-phrase b { color: #eee3bd; }
+
+  .box { border-radius: 8px; padding: 11px 14px; margin: 14px 0; page-break-inside: avoid; font-size: 11.8px; }
+  .box .label { font-weight: 700; font-size: 10.8px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; display: block; }
+  .def   { background: #e7edf5; border-left: 5px solid #2a5f8f; }
+  .def .label { color: #1e4566; }
+  .why   { background: #faeee0; border-left: 5px solid #b5661e; }
+  .why .label { color: #8a4c14; }
+  .recap { background: #e7f2e1; border-left: 5px solid #3d7a2e; }
+  .recap .label { color: #2c5a21; }
+  .ex    { background: #f1e9f6; border-left: 5px solid #6c3f9e; }
+  .ex .label { color: #522f77; }
+  .img   { background: #fdf6da; border-left: 5px solid #b59321; }
+  .img .label { color: #7a611a; }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 11px; }
+  th, td { border: 1px solid #d8d2bf; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eee3bd; color: #3d331a; font-weight: 700; }
+  tr:nth-child(even) td { background: #f4f0e4; }
+
+  code, .code { font-family: "DejaVu Sans Mono", monospace; background: #efeadb; padding: 1px 5px; border-radius: 4px; font-size: 10.8px; color: #4a3f1a; }
+  pre { background: #2b2a26; color: #f2ede0; padding: 10px 12px; border-radius: 8px; font-size: 10.3px; overflow-wrap: break-word; white-space: pre-wrap; }
+
+  ul, ol { padding-left: 20px; }
+  li { margin-bottom: 5px; }
+
+  .step { display: flex; gap: 10px; margin: 10px 0; align-items: flex-start; }
+  .step .num { flex: 0 0 auto; background: #1c1b17; color: #fbf8f2; font-weight: 700; font-size: 11px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .step .txt { flex: 1 1 auto; font-size: 11.8px; }
+
+  .glossaire dt { font-weight: 700; color: #1e4566; margin-top: 12px; }
+  .glossaire dd { margin: 3px 0 0 0; font-size: 11.6px; }
+
+  .footer-note { font-size: 10px; color: #8a8578; margin-top: 40px; border-top: 1px solid #d8d2bf; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- COUVERTURE -->
+<div class="cover">
+  <div class="eyebrow">Cours complet — niveau zéro à intermédiaire</div>
+  <h1>Comprendre notre projet d'intelligence artificielle, de A à Z</h1>
+  <div class="subtitle">Fine-tuning d'un modèle de langage pour répondre à des questions de santé en 5 langues africaines — expliqué depuis zéro, pas à pas, notebook par notebook.</div>
+  <div class="badge-row">
+    <span class="badge">Adapté TDAH</span>
+    <span class="badge">Adapté dyslexie</span>
+    <span class="badge">Aucun pré-requis</span>
+    <span class="badge">Master 2 BI — UCAD</span>
+  </div>
+  <div class="meta">
+    <div>Projet : gemmafro-e2b — Multilingual Health QA</div>
+    <div>Dépôt : github.com/andilMc/gemmafro-e2b</div>
+    <div>Ce document explique <b>tout</b> le projet, du concept d'intelligence artificielle jusqu'au dernier fichier généré.</div>
+  </div>
+</div>
+
+<!-- MODE D'EMPLOI -->
+<section class="partie" id="mode-emploi">
+  <div class="partie-eyebrow">Avant de commencer</div>
+  <h2 class="partie-titre">Comment lire ce document</h2>
+
+  <p>Ce document est <b>long</b>, volontairement. Mais il est découpé en toutes petites parties pour que vous puissiez le lire par petits bouts, vous arrêter n'importe où, et reprendre plus tard sans être perdu.</p>
+
+  <div class="box img">
+    <span class="label">Repères visuels</span>
+    Tout au long du document, vous croiserez toujours les mêmes 5 types de boîtes colorées. Une fois que vous les reconnaissez, votre œil sait quoi en faire sans avoir à tout relire :
+  </div>
+
+  <div class="box def"><span class="label">📖 Définition</span> Un mot compliqué expliqué simplement, la première fois qu'il apparaît.</div>
+  <div class="box why"><span class="label">💡 Pourquoi c'est important</span> Le lien entre une notion abstraite et une décision concrète du projet.</div>
+  <div class="box img"><span class="label">🎨 Image pour comprendre</span> Une comparaison avec quelque chose de la vie de tous les jours.</div>
+  <div class="box ex"><span class="label">🔍 Exemple concret</span> Un vrai chiffre, une vraie phrase, tirés de notre projet.</div>
+  <div class="box recap"><span class="label">✅ Ce qu'il faut retenir</span> Le résumé en 2-3 lignes, à la fin de chaque partie. Si vous êtes pressé, lisez juste ces boîtes-là.</div>
+
+  <h3>Conseils de lecture</h3>
+  <ul>
+    <li>Ne lisez pas tout d'un coup. Une partie = une session de lecture. Il y en a 10.</li>
+    <li>Chaque partie commence par une phrase noire en gras qui résume tout en une ligne — lisez-la d'abord.</li>
+    <li>Le glossaire (fin du document) reprend <b>tous</b> les mots techniques, dans l'ordre alphabétique. Si un mot vous échappe en cours de route, allez-y directement.</li>
+    <li>Ce n'est pas un examen. Il n'y a pas d'ordre obligatoire — vous pouvez sauter à la Partie 7 (les notebooks) si c'est ce qui vous intéresse le plus aujourd'hui.</li>
+  </ul>
+</section>
+
+<!-- TABLE DES MATIERES -->
+<nav class="toc">
+  <h2>Table des matières</h2>
+  <ol>
+    <li><a href="#p1">Les bases de l'intelligence artificielle (depuis zéro)</a></li>
+    <li><a href="#p2">Les modèles de langage (LLM)</a></li>
+    <li><a href="#p3">La problématique de notre projet</a></li>
+    <li><a href="#p4">Ce que l'analyse des données nous a appris</a></li>
+    <li><a href="#p5">Les solutions possibles, et pourquoi ce choix</a></li>
+    <li><a href="#p6">LoRA et QLoRA : les poids et les matrices, en détail</a></li>
+    <li><a href="#p7">Le voyage à travers chaque notebook</a></li>
+    <li><a href="#p8">Tous les fichiers générés, et à quoi ils servent</a></li>
+    <li><a href="#p9">Comprendre nos résultats</a></li>
+    <li><a href="#p10">Les problèmes techniques rencontrés, expliqués simplement</a></li>
+    <li><a href="#glossaire">Glossaire complet</a></li>
+    <li><a href="#suite">Pour aller plus loin</a></li>
+  </ol>
+</nav>
+
+<!-- PARTIE 1 -->
+<section class="partie" id="p1">
+  <div class="partie-eyebrow">Partie 1 / 12</div>
+  <h2 class="partie-titre">Les bases de l'intelligence artificielle (depuis zéro)</h2>
+
+  <div class="en-une-phrase">En une phrase : une IA, c'est un programme qui <b>apprend</b> à faire une tâche en regardant énormément d'exemples, au lieu qu'un humain lui dise exactement quoi faire ligne par ligne.</div>
+
+  <h3>1.1 — C'est quoi l'intelligence artificielle ?</h3>
+  <p>Un programme informatique classique, c'est une suite de règles écrites par un humain : "si X, alors fais Y". Une calculatrice ne devine rien, elle applique une règle fixe.</p>
+  <p>L'intelligence artificielle (IA), c'est différent. Au lieu d'écrire toutes les règles à la main, on donne au programme des <b>milliers d'exemples</b>, et c'est le programme lui-même qui trouve les règles, petit à petit, en s'ajustant à chaque erreur.</p>
+
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    Apprendre à un enfant à reconnaître un chat : vous ne lui donnez pas une liste de règles ("un chat a 4 pattes, des moustaches, ..."). Vous lui montrez plein de photos en disant "ça, c'est un chat" / "ça, ce n'est pas un chat". Après des centaines d'exemples, l'enfant reconnaît un chat qu'il n'a jamais vu. L'IA fonctionne pareil, mais avec des millions d'exemples et des calculs à la place d'un cerveau.
+  </div>
+
+  <h3>1.2 — C'est quoi le Machine Learning ?</h3>
+  <div class="box def"><span class="label">📖 Définition</span> Le <b>Machine Learning</b> (apprentissage automatique) est la branche de l'IA où le programme apprend à partir de données, sans qu'on lui dise explicitement la règle à suivre.</div>
+  <p>Notre projet est un projet de Machine Learning : on ne code pas nous-même "si la question contient le mot X, réponds Y". On donne au modèle 29 815 exemples de questions/réponses, et il apprend le lien entre les deux tout seul.</p>
+
+  <h3>1.3 — C'est quoi un réseau de neurones ?</h3>
+  <div class="box def"><span class="label">📖 Définition</span> Un <b>réseau de neurones</b> est un programme organisé en couches de petites unités de calcul ("neurones artificiels"), inspiré (de très loin) du cerveau humain. Chaque neurone reçoit des nombres, fait un petit calcul, et transmet le résultat au neurone suivant.</div>
+  <p>Un grand modèle de langage (comme celui qu'on utilise, Gemma) est un immense réseau de neurones, organisé en dizaines de couches empilées, avec des milliards de connexions entre les neurones.</p>
+
+  <h3>1.4 — C'est quoi un "poids" (weight) ?</h3>
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    Imaginez une table de mixage de studio de musique, avec des milliers de petits boutons (potentiomètres). Chaque bouton contrôle "combien" un signal compte dans le résultat final. Un <b>poids</b>, c'est exactement ça : un petit nombre qui dit "à quel point cette information compte" dans le calcul d'un neurone.
+  </div>
+  <p>Un modèle comme Gemma a des <b>milliards</b> de ces petits boutons (poids). Au départ (avant tout entraînement), ils sont réglés au hasard. <b>Entraîner</b> un modèle, c'est tourner tous ces boutons, un tout petit peu à chaque fois, jusqu'à ce que le résultat final soit bon.</p>
+
+  <h3>1.5 — C'est quoi une matrice ?</h3>
+  <div class="box def"><span class="label">📖 Définition</span> Une <b>matrice</b>, c'est simplement un grand tableau de nombres, organisé en lignes et en colonnes. Rien de plus qu'un tableau Excel rempli de chiffres.</div>
+  <p>Dans un réseau de neurones, les poids ne sont pas rangés en vrac : ils sont organisés en matrices, parce que ça permet de faire les calculs très rapidement (les ordinateurs, et surtout les cartes graphiques/GPU, sont excellents pour multiplier des matrices entre elles).</p>
+
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    Reprenez l'image de la table de mixage : au lieu d'avoir les boutons éparpillés n'importe comment, ils sont rangés proprement en grille, comme les cases d'un plateau de jeu — ligne 1, colonne 1 ; ligne 1, colonne 2 ; etc. C'est ça, une matrice de poids.
+  </div>
+
+  <h3>1.6 — C'est quoi "entraîner" un modèle ?</h3>
+  <p>L'entraînement, c'est une boucle répétée des millions de fois :</p>
+  <div class="step"><div class="num">1</div><div class="txt">Le modèle regarde un exemple (une question) et fait une prédiction (une réponse) avec ses poids actuels.</div></div>
+  <div class="step"><div class="num">2</div><div class="txt">On compare sa prédiction à la vraie réponse attendue. Plus c'est différent, plus l'<b>erreur</b> (on dit aussi la <b>perte</b>, ou <i>loss</i> en anglais) est grande.</div></div>
+  <div class="step"><div class="num">3</div><div class="txt">Un calcul mathématique (la <b>rétropropagation du gradient</b>) détermine, pour chaque poids, dans quel sens et de combien il faut le tourner pour réduire un peu cette erreur.</div></div>
+  <div class="step"><div class="num">4</div><div class="txt">On tourne tous les poids concernés d'un tout petit cran dans la bonne direction.</div></div>
+  <div class="step"><div class="num">5</div><div class="txt">On recommence avec l'exemple suivant, encore, et encore.</div></div>
+
+  <div class="box def"><span class="label">📖 Définition</span> Une <b>époque</b> (<i>epoch</i>), c'est le fait d'avoir fait passer <b>tous</b> les exemples d'entraînement une fois dans cette boucle. Notre modèle a fait 3 époques : il a vu chaque exemple 3 fois.</div>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    Une IA apprend par l'exemple plutôt que par des règles écrites à la main. Le "savoir" du modèle est stocké dans des millions/milliards de petits nombres appelés <b>poids</b>, rangés en grands tableaux appelés <b>matrices</b>. Entraîner le modèle, c'est ajuster ces poids petit à petit pour réduire ses erreurs.
+  </div>
+</section>
+
+<!-- PARTIE 2 -->
+<section class="partie" id="p2">
+  <div class="partie-eyebrow">Partie 2 / 12</div>
+  <h2 class="partie-titre">Les modèles de langage (LLM)</h2>
+
+  <div class="en-une-phrase">En une phrase : un LLM est un immense réseau de neurones entraîné à faire une seule chose extrêmement bien — deviner quel mot vient après les mots précédents.</div>
+
+  <h3>2.1 — C'est quoi un LLM ?</h3>
+  <div class="box def"><span class="label">📖 Définition</span> <b>LLM</b> = <i>Large Language Model</i>, "grand modèle de langage". C'est un réseau de neurones entraîné sur d'énormes quantités de texte (livres, sites web, articles...), pour apprendre à produire du texte qui a du sens.</div>
+  <p>Gemma (le modèle qu'on utilise, publié par Google) est un LLM. ChatGPT, Claude (moi-même), Gemini... sont aussi des LLM.</p>
+
+  <h3>2.2 — La tokenisation : couper le texte en petits morceaux</h3>
+  <div class="box def"><span class="label">📖 Définition</span> Un ordinateur ne comprend que des nombres, jamais du texte directement. La <b>tokenisation</b>, c'est l'étape qui découpe une phrase en petits morceaux (des <b>tokens</b> : un mot entier, ou parfois juste un bout de mot), pour ensuite transformer chaque morceau en nombre.</div>
+
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    C'est comme découper une phrase en pièces de puzzle. "Bonjour le monde" pourrait devenir 3 pièces : "Bonjour" / " le" / " monde". Chaque pièce a un numéro dans un immense dictionnaire (le <b>tokenizer</b>).
+  </div>
+
+  <div class="box why">
+    <span class="label">💡 Pourquoi c'est important pour notre projet</span>
+    En analysant nos données (Partie 4), on a découvert que le découpeur (tokenizer) de Gemma découpe le luganda et l'amharique en <b>beaucoup plus</b> de petits morceaux que l'anglais pour dire la même chose (3 tokens par mot en moyenne en luganda, contre 1,25 en anglais). Ça veut dire que le modèle "connaît" moins bien ces langues, et que ça lui coûte plus cher en calcul de les traiter.
+  </div>
+
+  <h3>2.3 — Les embeddings : transformer les mots en listes de nombres</h3>
+  <div class="box def"><span class="label">📖 Définition</span> Un <b>embedding</b>, c'est une liste de plusieurs centaines de nombres qui représente le "sens" d'un token. Deux mots avec un sens proche (ex. "médecin" et "docteur") ont des listes de nombres proches.</div>
+  <p>Cette transformation se fait dans une immense matrice appelée la <b>table d'embeddings</b> (ou <i>embedding table</i>) : une ligne par token possible dans le vocabulaire du modèle, et chaque ligne contient les nombres qui représentent ce token. Chez Gemma, cette table est très grande car le vocabulaire couvre énormément de langues.</p>
+
+  <h3>2.4 — Comment un LLM génère du texte</h3>
+  <p>Un LLM ne "sait" pas la réponse d'un coup. Il génère un token à la fois :</p>
+  <div class="step"><div class="num">1</div><div class="txt">Il regarde tout le texte déjà écrit (la question + le début de la réponse).</div></div>
+  <div class="step"><div class="num">2</div><div class="txt">Il calcule, pour chaque token possible de son vocabulaire, la probabilité que ce soit le prochain.</div></div>
+  <div class="step"><div class="num">3</div><div class="txt">Il choisit le token le plus probable (c'est ce qu'on appelle la génération "gloutonne"/<i>greedy</i>, la méthode qu'on a utilisée pour l'évaluation).</div></div>
+  <div class="step"><div class="num">4</div><div class="txt">Il ajoute ce token au texte, et recommence à l'étape 1 — jusqu'à un signal de fin, ou une limite de longueur.</div></div>
+
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    C'est le principe du "texte prédictif" de votre téléphone quand vous écrivez un SMS, mais démultiplié : au lieu de proposer 3 mots suivants approximatifs, le LLM a été entraîné sur des milliards de phrases et peut enchaîner des réponses longues, cohérentes et adaptées au contexte.
+  </div>
+
+  <h3>2.5 — Pré-entraînement vs fine-tuning</h3>
+  <div class="box def"><span class="label">📖 Définition</span> Le <b>pré-entraînement</b> est la phase (très longue, très coûteuse, faite par Google pour Gemma) où le modèle apprend le langage en général à partir d'un immense volume de texte. Le <b>fine-tuning</b> ("ajustement fin") est une phase courte, faite ensuite par nous, qui spécialise un modèle déjà pré-entraîné sur une tâche précise, avec un jeu de données beaucoup plus petit.</div>
+
+  <div class="box why">
+    <span class="label">💡 Pourquoi c'est important pour notre projet</span>
+    On n'a jamais entraîné un modèle "depuis zéro" — ça demanderait des millions d'euros de calcul. On est partis d'un modèle déjà pré-entraîné par Google (<code>gemma-4-E2B-it</code>) qui sait déjà parler plusieurs langues, et on l'a juste <b>spécialisé</b> sur les questions-réponses de santé de notre dataset. C'est tout l'objet de ce projet.
+  </div>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    Un LLM transforme le texte en tokens, puis en nombres (embeddings), et génère sa réponse un mot à la fois en devinant le plus probable. Un LLM pré-entraîné sait déjà "parler" en général ; le fine-tuning le spécialise sur une tâche précise, sans repartir de zéro.
+  </div>
+</section>
+
+<!-- PARTIE 3 -->
+<section class="partie" id="p3">
+  <div class="partie-eyebrow">Partie 3 / 12</div>
+  <h2 class="partie-titre">La problématique de notre projet</h2>
+
+  <div class="en-une-phrase">En une phrase : des millions de personnes en Afrique n'ont pas accès à une information de santé fiable, parce qu'elle n'existe presque jamais dans leur langue maternelle.</div>
+
+  <h3>3.1 — Le vrai problème derrière ce projet</h3>
+  <p>Ce projet n'est pas un exercice technique gratuit. Il répond à un vrai constat, documenté par une organisation appelée <b>HASH</b> :</p>
+  <ul>
+    <li>En Afrique subsaharienne, le taux de maternité précoce est très élevé : 93 naissances pour 1 000 filles de 15 à 19 ans en 2023.</li>
+    <li>Plus d'un million d'infections sexuellement transmissibles (IST) sont contractées chaque jour dans le monde, la majorité en Afrique.</li>
+    <li>L'information de santé numérique disponible existe presque uniquement en anglais ou en français — pas dans les langues que parlent réellement les gens au quotidien (akan, luganda, swahili, amharique...).</li>
+  </ul>
+
+  <h3>3.2 — Qui organise ce défi ?</h3>
+  <div class="box def"><span class="label">📖 Définition</span> <b>HASH</b> (<i>Hub for Artificial Intelligence in Maternal, Sexual and Reproductive Health</i>) est un consortium ougandais (Infectious Diseases Institute, Sunbird AI, Makerere University) qui finance et organise des projets d'IA responsable pour la santé maternelle, sexuelle et reproductive en Afrique. C'est HASH qui a lancé, avec la plateforme <b>Zindi</b> (une plateforme de compétitions de data science africaine) et l'<b>ITU</b>, le défi dont on utilise le jeu de données.</div>
+
+  <div class="box why">
+    <span class="label">💡 Précision importante</span>
+    Ce projet est un <b>exercice académique</b> : on utilise les données du défi Zindi, mais on ne soumet rien officiellement à la compétition. L'objectif est pédagogique — apprendre en construisant un vrai pipeline d'IA sur un vrai problème.
+  </div>
+
+  <h3>3.3 — La tâche exacte à résoudre</h3>
+  <p>On donne au modèle une question de santé, écrite dans une langue donnée. Le modèle doit répondre, dans <b>la même langue</b>, de façon claire et fiable médicalement.</p>
+
+  <div class="box ex">
+    <span class="label">🔍 Exemple concret</span>
+    Question (en amharique) : "Si une femme enceinte a la syphilis, en combien de temps doit-elle être traitée ?"<br>
+    Réponse attendue (en amharique) : "Immédiatement. Pour éviter que l'infection ne se transmette au fœtus, le traitement à la pénicilline doit être administré le plus vite possible après le diagnostic."
+  </div>
+
+  <h3>3.4 — Les 5 langues et les données</h3>
+  <p>Le jeu de données couvre 5 langues, réparties sur 8 combinaisons langue-pays (car "anglais" apparaît dans 4 pays différents, avec des questions/réponses propres à chaque contexte local) :</p>
+  <table>
+    <tr><th>Code</th><th>Langue</th><th>Pays</th></tr>
+    <tr><td>Eng</td><td>Anglais</td><td>Ghana, Ouganda, Kenya, Éthiopie</td></tr>
+    <tr><td>Aka</td><td>Akan</td><td>Ghana</td></tr>
+    <tr><td>Lug</td><td>Luganda</td><td>Ouganda</td></tr>
+    <tr><td>Swa</td><td>Swahili</td><td>Kenya</td></tr>
+    <tr><td>Amh</td><td>Amharique</td><td>Éthiopie</td></tr>
+  </table>
+
+  <p>Trois fichiers nous ont été fournis :</p>
+  <table>
+    <tr><th>Fichier</th><th>Rôle</th><th>Nombre de lignes</th></tr>
+    <tr><td><code>Train.csv</code></td><td>Sert à entraîner le modèle</td><td>29 815</td></tr>
+    <tr><td><code>Val.csv</code></td><td>Sert à vérifier les progrès, sans jamais s'en servir pour entraîner</td><td>6 686</td></tr>
+    <tr><td><code>Test.csv</code></td><td>Questions seules, à qui on doit fournir des réponses</td><td>2 618</td></tr>
+  </table>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    Le problème est réel : l'accès à l'information santé dans les langues locales africaines. La tâche est simple à formuler (question dans une langue → réponse dans la même langue), même si elle est difficile à résoudre techniquement. On dispose de 29 815 exemples pour apprendre au modèle, et 2 618 questions "d'examen final" sur lesquelles il n'a jamais vu la réponse.
+  </div>
+</section>
+
+<!-- PARTIE 4 -->
+<section class="partie" id="p4">
+  <div class="partie-eyebrow">Partie 4 / 12</div>
+  <h2 class="partie-titre">Ce que l'analyse des données nous a appris (EDA)</h2>
+
+  <div class="en-une-phrase">En une phrase : avant de construire quoi que ce soit, on a regardé les données en détail — et ce qu'on a trouvé a directement influencé toutes les décisions techniques qui ont suivi.</div>
+
+  <h3>4.1 — Pourquoi regarder les données avant de coder</h3>
+  <div class="box def"><span class="label">📖 Définition</span> L'<b>EDA</b> (<i>Exploratory Data Analysis</i>, analyse exploratoire des données) est l'étape où on inspecte un jeu de données — tailles, distributions, valeurs manquantes, exemples — <b>avant</b> de construire un modèle dessus.</div>
+  <div class="box why">
+    <span class="label">💡 Pourquoi c'est important</span>
+    Un modèle entraîné sans avoir compris ses données, c'est comme cuisiner sans avoir goûté les ingrédients. On risque de rater des problèmes évidents (déséquilibres, biais) qui expliqueraient ensuite des résultats bizarres.
+  </div>
+
+  <h3>4.2 — Premier constat : les données sont propres</h3>
+  <p>Aucune valeur manquante, aucun identifiant (<code>ID</code>) dupliqué, dans aucun des 3 fichiers. Un bon point de départ.</p>
+
+  <h3>4.3 — Deuxième constat : les langues ne sont pas équilibrées</h3>
+  <p>Certaines langues ont beaucoup plus d'exemples que d'autres dans <code>Train.csv</code> :</p>
+  <table>
+    <tr><th>Langue</th><th>Nombre de lignes</th><th>Part du total</th></tr>
+    <tr><td>Eng_Uga (anglais, Ouganda)</td><td>7 624</td><td>25,6 %</td></tr>
+    <tr><td>Aka_Gha (akan)</td><td>4 455</td><td>14,9 %</td></tr>
+    <tr><td>Eng_Gha (anglais, Ghana)</td><td>4 443</td><td>14,9 %</td></tr>
+    <tr><td>Eng_Eth (anglais, Éthiopie)</td><td>3 915</td><td>13,1 %</td></tr>
+    <tr><td>Lug_Uga (luganda)</td><td>3 383</td><td>11,3 %</td></tr>
+    <tr><td>Eng_Ken (anglais, Kenya)</td><td>2 080</td><td>7,0 %</td></tr>
+    <tr><td>Swa_Ken (swahili)</td><td>2 070</td><td>6,9 %</td></tr>
+    <tr><td>Amh_Eth (amharique)</td><td>1 845</td><td>6,2 %</td></tr>
+  </table>
+
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    Imaginez apprendre à un enfant à reconnaître des animaux avec 100 photos de chats, mais seulement 16 photos de zèbres. Il sera bien meilleur avec les chats. C'est le même risque ici : sans correction, le modèle risquait de bien mieux répondre en anglais qu'en amharique, simplement parce qu'il aurait vu 4 fois moins d'exemples d'amharique.
+  </div>
+
+  <h3>4.4 — Troisième constat : certaines langues sont "plus difficiles" pour le modèle</h3>
+  <p>On a mesuré combien de <b>tokens</b> (morceaux de mots, cf. Partie 2) le découpeur de Gemma produit par mot, dans chaque langue :</p>
+  <table>
+    <tr><th>Langue</th><th>Tokens par mot (moyenne)</th></tr>
+    <tr><td>Luganda</td><td>3,06</td></tr>
+    <tr><td>Amharique</td><td>3,01</td></tr>
+    <tr><td>Akan</td><td>2,24</td></tr>
+    <tr><td>Swahili</td><td>2,09</td></tr>
+    <tr><td>Anglais (moyenne des 4 variantes)</td><td>~1,28</td></tr>
+  </table>
+  <div class="box why">
+    <span class="label">💡 Pourquoi c'est important</span>
+    Un ratio élevé veut dire que le découpeur "connaît mal" cette langue : il doit la couper en tout petits morceaux au lieu de mots entiers. C'est un signe que Gemma a été pré-entraîné avec très peu de texte en luganda/amharique. Résultat concret plus loin (Partie 9) : ce sont exactement ces langues qui obtiennent les scores les plus faibles, même après fine-tuning.
+  </div>
+
+  <p>On a aussi vu que les réponses en akan et en luganda sont naturellement beaucoup plus longues (233 à 245 tokens en moyenne, jusqu'à ~1000 tokens pour certaines) que les réponses en anglais (32 à 121 tokens en moyenne).</p>
+
+  <h3>4.5 — Quatrième constat : beaucoup de réponses se répètent</h3>
+  <p><b>39,4 %</b> des réponses de <code>Train.csv</code> sont des doublons exacts d'une autre réponse. Ce n'est pas une erreur : le jeu de données est de type "FAQ santé", où plusieurs questions différentes mais proches partagent souvent la même réponse officielle.</p>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    L'EDA a révélé 3 problèmes à anticiper : (1) un déséquilibre fort entre langues (facteur ~4), (2) une difficulté intrinsèque plus grande pour akan/luganda/amharique (tokenisation), (3) beaucoup de réponses répétées. Ces 3 constats ont directement guidé les choix de la Partie 6 (comment on a préparé les données pour l'entraînement).
+  </div>
+</section>
+
+<!-- PARTIE 5 -->
+<section class="partie" id="p5">
+  <div class="partie-eyebrow">Partie 5 / 12</div>
+  <h2 class="partie-titre">Les solutions possibles, et pourquoi ce choix</h2>
+
+  <div class="en-une-phrase">En une phrase : il existait 3 grandes façons de résoudre ce problème — on a choisi la plus ambitieuse, le fine-tuning d'un LLM, parce qu'elle permet les réponses les plus naturelles.</div>
+
+  <h3>5.1 — Solution A : chercher la réponse la plus proche (TF-IDF)</h3>
+  <div class="box def"><span class="label">📖 Définition</span> Le <b>TF-IDF</b> (<i>Term Frequency – Inverse Document Frequency</i>) est une technique qui compare des textes en comptant les mots qu'ils ont en commun (en donnant plus de poids aux mots rares, plus informatifs que les mots courants comme "le", "de", "et").</div>
+  <p>La méthode : pour une nouvelle question, on cherche dans <code>Train.csv</code> la question la plus "ressemblante" (au sens du TF-IDF), et on recopie <b>telle quelle</b> la réponse associée.</p>
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    C'est comme chercher dans un vieux classeur de fiches la fiche qui ressemble le plus à votre question, et recopier ce qui est écrit dessus — sans jamais rien inventer ni reformuler.
+  </div>
+  <p><b>Limite :</b> si aucune question du jeu d'entraînement ne ressemble vraiment à la nouvelle question, la réponse recopiée sera hors sujet. Aucune génération, aucune créativité, aucune capacité à reformuler.</p>
+
+  <h3>5.2 — Solution B : un modèle traducteur/générateur classique (mT5)</h3>
+  <div class="box def"><span class="label">📖 Définition</span> <b>mT5</b> est un modèle multilingue de type <i>seq2seq</i> (séquence-à-séquence) : il prend un texte en entrée et génère un texte en sortie, entraîné spécifiquement pour ce genre de transformation (comme la traduction).</div>
+  <p>Contrairement au TF-IDF, mT5 génère vraiment une nouvelle réponse — mais il n'est pas "instruction-tuned" (pas spécialement entraîné à suivre des instructions comme un assistant conversationnel), et sa version la plus légère a une compréhension du langage moins fine qu'un LLM récent comme Gemma.</p>
+
+  <h3>5.3 — Solution C (notre choix) : fine-tuner un LLM instruction-tuned</h3>
+  <p>On a choisi de partir d'un LLM déjà entraîné à suivre des instructions et à converser (<code>google/gemma-4-E2B-it</code>, le "it" signifiant <i>instruction-tuned</i>), et de le <b>spécialiser</b> sur notre tâche via le fine-tuning (cf. Partie 2.5 et Partie 6).</p>
+
+  <h3>5.4 — Tableau comparatif</h3>
+  <table>
+    <tr><th>Critère</th><th>TF-IDF (retrieval)</th><th>mT5 (seq2seq)</th><th>Fine-tuning LLM (notre choix)</th></tr>
+    <tr><td>Génère du texte nouveau ?</td><td>Non — recopie</td><td>Oui</td><td>Oui</td></tr>
+    <tr><td>Qualité de langage attendue</td><td>Faible</td><td>Moyenne</td><td>Meilleure</td></tr>
+    <tr><td>Vitesse</td><td>Très rapide</td><td>Moyenne</td><td>Plus lente</td></tr>
+    <tr><td>Faisable sur un GPU gratuit ?</td><td>Oui, facilement</td><td>Oui</td><td>Oui, grâce à la quantification 4-bit (Partie 6)</td></tr>
+  </table>
+
+  <div class="box why">
+    <span class="label">💡 Pourquoi ce choix, concrètement</span>
+    On voulait des réponses fluides et bien formulées, pas de simples copier-coller de réponses existantes. Le fine-tuning d'un LLM récent est aussi l'approche la plus représentative des pratiques actuelles en IA appliquée — un choix pédagogiquement plus riche pour ce projet de classe.
+  </div>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    Trois approches étaient possibles : copier une réponse existante (TF-IDF), générer avec un modèle classique (mT5), ou spécialiser un grand modèle de langage récent (fine-tuning LLM). On a choisi la troisième pour la qualité de génération attendue et sa pertinence pédagogique.
+  </div>
+</section>
+
+<!-- PARTIE 6 -->
+<section class="partie" id="p6">
+  <div class="partie-eyebrow">Partie 6 / 12</div>
+  <h2 class="partie-titre">LoRA et QLoRA : les poids et les matrices, en détail</h2>
+
+  <div class="en-une-phrase">En une phrase : au lieu de re-régler les milliards de boutons du modèle entier, on ajoute un tout petit panneau de réglage à côté, et on n'ajuste que celui-là.</div>
+
+  <h3>6.1 — Pourquoi on ne peut pas juste "réentraîner tout Gemma"</h3>
+  <p>Le modèle <code>gemma-4-E2B-it</code> contient des milliards de poids (Partie 1.4). Réentraîner <b>tous</b> ces poids ("fine-tuning complet") demanderait :</p>
+  <ul>
+    <li>Une quantité de mémoire GPU énorme (bien plus que les 16 à 24 Go dont on disposait sur Google Colab).</li>
+    <li>Un temps de calcul très long.</li>
+    <li>Un risque d'"oublier" les capacités générales du modèle en le sur-spécialisant sur seulement 53 300 exemples.</li>
+  </ul>
+
+  <h3>6.2 — Le principe de LoRA</h3>
+  <div class="box def"><span class="label">📖 Définition</span> <b>LoRA</b> (<i>Low-Rank Adaptation</i>) est une technique qui <b>gèle</b> tous les poids originaux du modèle (ils ne changent plus jamais) et ajoute, à côté de certaines matrices existantes, deux toutes petites matrices supplémentaires qu'on entraîne à la place.</div>
+
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    Reprenez l'image de la table de mixage géante (Partie 1.4). LoRA, c'est comme visser un petit boîtier de correction juste à côté, avec seulement quelques boutons. On ne touche à aucun bouton de la table originale — on ajoute juste une petite correction, calculée pour orienter le résultat final dans la bonne direction. À la fin, seul ce petit boîtier a été réglé, pas toute la table.
+  </div>
+
+  <p>Concrètement, pour chaque grande matrice de poids ciblée (nos "projections d'attention" : <code>q_proj</code>, <code>k_proj</code>, <code>v_proj</code>, <code>o_proj</code>, et nos "projections du réseau" : <code>gate_proj</code>, <code>up_proj</code>, <code>down_proj</code>), LoRA ajoute deux petites matrices A et B. Le résultat final utilisé par le modèle est : <i>poids original (gelé) + (A × B)</i>.</p>
+
+  <div class="box def">
+    <span class="label">📖 Définition — le "rang" (r)</span>
+    Le <b>rang</b> (paramètre <code>r</code>) contrôle la taille de ces petites matrices A et B — plus <code>r</code> est grand, plus elles peuvent apprendre de choses fines, mais plus elles prennent de mémoire et de temps à entraîner. On a choisi <code>r = 16</code>, une valeur courante et raisonnable pour ce genre de tâche.
+  </div>
+
+  <div class="box why">
+    <span class="label">💡 Pourquoi c'est important</span>
+    Résultat mesuré dans notre projet : l'adaptateur LoRA final ne pèse que <b>~115 Mo</b>, alors que le modèle complet en pèse plusieurs milliards de fois plus de paramètres. On entraîne et on stocke une toute petite fraction du modèle, pour un résultat proche d'un fine-tuning complet.
+  </div>
+
+  <h3>6.3 — Le principe de QLoRA (la version "économe")</h3>
+  <div class="box def"><span class="label">📖 Définition</span> <b>QLoRA</b> = <b>Q</b>uantized LoRA. On ajoute une étape supplémentaire : le modèle de base gelé est chargé en mémoire dans un format <b>compressé</b> (4 bits par nombre au lieu de 16 ou 32), ce qui divise sa taille en mémoire par environ 4.</div>
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre</span>
+    C'est comme compresser une photo en JPEG plutôt que de garder le fichier brut de l'appareil photo : le fichier prend beaucoup moins de place, la qualité perd un tout petit peu de précision, mais reste largement suffisante pour l'usage qu'on en fait.
+  </div>
+  <p>Grâce à QLoRA, notre modèle (plusieurs milliards de paramètres au total) tenait dans seulement <b>~6,7 Go</b> de mémoire GPU une fois chargé en 4-bit — ce qui rentre confortablement dans les 16 à 24 Go dont on disposait sur Google Colab.</p>
+
+  <h3>6.4 — Nos réglages, expliqués simplement</h3>
+  <table>
+    <tr><th>Réglage</th><th>Valeur</th><th>Ce que ça veut dire</th></tr>
+    <tr><td>Quantification</td><td>4-bit (NF4)</td><td>Le modèle gelé est compressé pour tenir en mémoire</td></tr>
+    <tr><td>Rang (<code>r</code>)</td><td>16</td><td>Taille des petites matrices ajoutées par LoRA</td></tr>
+    <tr><td>Alpha (<code>lora_alpha</code>)</td><td>32</td><td>Un multiplicateur qui règle "l'intensité" de la correction LoRA (usuellement 2×r)</td></tr>
+    <tr><td>Dropout</td><td>0,05</td><td>Une petite dose de "hasard" pendant l'entraînement pour éviter que le modèle n'apprenne les exemples par cœur</td></tr>
+    <tr><td>Modules ciblés</td><td>7 types de couches</td><td>Les projections d'attention et de MLP (les parties du modèle qui traitent le contexte et la logique)</td></tr>
+  </table>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    LoRA gèle le modèle géant et n'entraîne que de petites matrices additionnelles insérées dans certaines couches — beaucoup plus léger qu'un fine-tuning complet. QLoRA ajoute la compression 4-bit du modèle gelé pour qu'il tienne en mémoire. Résultat : un modèle de plusieurs milliards de paramètres, entraînable sur un GPU accessible, avec un "supplément" appris de seulement ~115 Mo.
+  </div>
+</section>
+
+<!-- PARTIE 7 -->
+<section class="partie" id="p7">
+  <div class="partie-eyebrow">Partie 7 / 12</div>
+  <h2 class="partie-titre">Le voyage à travers chaque notebook</h2>
+
+  <div class="en-une-phrase">En une phrase : le projet est découpé en 6 notebooks, comme les 6 étapes d'une recette de cuisine, chacun préparant le terrain pour le suivant.</div>
+
+  <div class="box img">
+    <span class="label">🎨 Image pour comprendre : la recette de cuisine</span>
+    <b>00</b> = installer la cuisine (les outils). <b>01</b> = inspecter les ingrédients. <b>02</b> = préparer/découper les ingrédients. <b>03</b> = cuisiner (l'entraînement, la partie la plus longue). <b>04</b> = goûter le plat avant de servir (évaluation). <b>05</b> = dresser l'assiette et servir (prédictions finales).
+  </div>
+
+  <h3>7.0 — Notebook 00 : installer l'atelier (Phase 0)</h3>
+  <p><b>Objectif :</b> préparer l'environnement de travail sur Google Colab, avant de toucher au modèle.</p>
+  <p><b>Algorithme, étape par étape :</b></p>
+  <div class="step"><div class="num">1</div><div class="txt">Vérifier qu'un GPU est bien attribué par Colab (commande <code>nvidia-smi</code>).</div></div>
+  <div class="step"><div class="num">2</div><div class="txt">Connecter Google Drive, pour pouvoir sauvegarder des fichiers qui survivent à la fermeture de la session (sinon, tout est perdu à la déconnexion).</div></div>
+  <div class="step"><div class="num">3</div><div class="txt">Cloner (télécharger) le dépôt GitHub du projet, pour récupérer les données et le code.</div></div>
+  <div class="step"><div class="num">4</div><div class="txt">Installer les bibliothèques Python nécessaires (<code>transformers</code>, <code>peft</code>, <code>bitsandbytes</code>...).</div></div>
+  <div class="step"><div class="num">5</div><div class="txt">Se connecter à Hugging Face (la plateforme qui héberge le modèle Gemma) avec un token d'accès.</div></div>
+  <div class="step"><div class="num">6</div><div class="txt">Charger le modèle une première fois, en test, pour vérifier que tout fonctionne avant d'aller plus loin.</div></div>
+
+  <h3>7.1 — Notebook 01 : explorer les données (Phase 1, EDA)</h3>
+  <p><b>Objectif :</b> comprendre le jeu de données avant d'y toucher (détails en Partie 4).</p>
+  <p><b>Algorithme :</b> charger les 3 fichiers CSV → vérifier valeurs manquantes/doublons → compter les lignes par langue → mesurer la longueur des textes en tokens par langue → calculer le ratio tokens/mot par langue → repérer les réponses dupliquées → tout afficher sous forme de tableaux et de graphiques.</p>
+
+  <h3>7.2 — Notebook 02 : préparer les données (Phase 2)</h3>
+  <p><b>Objectif :</b> transformer les questions/réponses brutes en un format que le modèle peut apprendre, en corrigeant les problèmes trouvés en Partie 4.</p>
+  <p><b>Algorithme :</b></p>
+  <div class="step"><div class="num">1</div><div class="txt">Pour chaque exemple, construire une instruction ("Réponds à cette question en [langue]...") avec la vraie question.</div></div>
+  <div class="step"><div class="num">2</div><div class="txt">Mettre en forme au format "conversation" attendu par Gemma (tour <code>user</code>, tour <code>model</code>).</div></div>
+  <div class="step"><div class="num">3</div><div class="txt">Séparer 95 % des données pour l'entraînement, 5 % pour surveiller les progrès en cours de route (sans jamais s'en servir pour entraîner).</div></div>
+  <div class="step"><div class="num">4</div><div class="txt">Dupliquer un peu plus les exemples des langues minoritaires (amharique, swahili, kenya anglais...), pour réduire le déséquilibre repéré en Partie 4.3 — sans dupliquer à l'infini, pour éviter que le modèle apprenne les phrases par cœur.</div></div>
+  <div class="step"><div class="num">5</div><div class="txt">Mesurer la vraie longueur (en tokens) des exemples, pour choisir une limite de longueur adaptée (512 tokens).</div></div>
+  <div class="step"><div class="num">6</div><div class="txt">Sauvegarder le résultat sur Google Drive, prêt à être réutilisé par le notebook suivant.</div></div>
+
+  <h3>7.3 — Notebook 03 : le fine-tuning (Phase 3 — la cuisine)</h3>
+  <p><b>Objectif :</b> entraîner réellement le modèle. C'est le notebook le plus long à exécuter (plusieurs heures).</p>
+  <p><b>Algorithme :</b></p>
+  <div class="step"><div class="num">1</div><div class="txt">Charger le modèle de base en 4-bit (QLoRA, cf. Partie 6.3).</div></div>
+  <div class="step"><div class="num">2</div><div class="txt">Geler tous ses poids, puis ajouter les petites matrices LoRA (cf. Partie 6.2) sur les couches ciblées.</div></div>
+  <div class="step"><div class="num">3</div><div class="txt">Lancer la boucle d'entraînement (cf. Partie 1.6) : lire un petit paquet d'exemples (un "batch"), calculer l'erreur, ajuster les petites matrices LoRA, répéter — pendant 3 passages complets sur les 53 300 exemples (3 "époques").</div></div>
+  <div class="step"><div class="num">4</div><div class="txt">Sauvegarder régulièrement l'état d'avancement ("checkpoint") sur Drive, pour pouvoir reprendre si la session Colab se coupe.</div></div>
+  <div class="step"><div class="num">5</div><div class="txt">À la fin, sauvegarder l'adaptateur LoRA final (les petites matrices entraînées, ~115 Mo).</div></div>
+
+  <div class="box ex">
+    <span class="label">🔍 Exemple concret — le résultat de cet entraînement</span>
+    9 996 pas d'entraînement, sur 3 époques, pour une <b>perte finale de 0,668</b> (plus ce nombre est bas, moins le modèle se trompe — cf. Partie 1.6). Temps de calcul cumulé : environ 16,8 heures, réparties sur plusieurs sessions Colab.
+  </div>
+
+  <h3>7.4 — Notebook 04 : goûter le résultat (Phase 4, évaluation)</h3>
+  <p><b>Objectif :</b> mesurer si le fine-tuning a vraiment aidé, avec des chiffres et des exemples.</p>
+  <p><b>Algorithme :</b></p>
+  <div class="step"><div class="num">1</div><div class="txt">Recharger le modèle de base + l'adaptateur LoRA entraîné.</div></div>
+  <div class="step"><div class="num">2</div><div class="txt">Prendre 500 questions de <code>Val.csv</code> (jamais vues à l'entraînement).</div></div>
+  <div class="step"><div class="num">3</div><div class="txt">Générer une réponse pour chacune, <b>avec</b> l'adaptateur activé (modèle fine-tuné).</div></div>
+  <div class="step"><div class="num">4</div><div class="txt">Générer une réponse pour les mêmes questions, <b>sans</b> l'adaptateur (modèle "zero-shot" — le modèle Google original, tel quel).</div></div>
+  <div class="step"><div class="num">5</div><div class="txt">Comparer chaque réponse générée à la vraie réponse attendue, avec un score appelé ROUGE (cf. Partie 9).</div></div>
+  <div class="step"><div class="num">6</div><div class="txt">Calculer ces scores globalement et langue par langue, pour voir où le modèle est fort ou faible.</div></div>
+
+  <h3>7.5 — Notebook 05 : servir le plat (Phase 6, prédictions finales)</h3>
+  <p><b>Objectif :</b> produire les réponses finales sur les 2 618 questions de <code>Test.csv</code> — celles pour lesquelles on n'a jamais eu la réponse.</p>
+  <p><b>Algorithme :</b> même principe que le notebook 04 (charger le modèle + l'adaptateur, générer les réponses), mais sur tout <code>Test.csv</code>, avec des vérifications automatiques à la fin (pas de réponse vide, pas d'ID en double, pas d'ID manquant) avant de sauvegarder le fichier final.</p>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    Chaque notebook a un rôle précis et s'appuie sur le résultat du précédent : 00 prépare l'environnement, 01 comprend les données, 02 les transforme, 03 entraîne le modèle, 04 vérifie s'il a bien appris, 05 produit les réponses finales. Aucune étape ne peut être sautée.
+  </div>
+</section>
+
+<!-- PARTIE 8 -->
+<section class="partie" id="p8">
+  <div class="partie-eyebrow">Partie 8 / 12</div>
+  <h2 class="partie-titre">Tous les fichiers générés, et à quoi ils servent</h2>
+
+  <div class="en-une-phrase">En une phrase : chaque notebook laisse des traces sur Google Drive — voici ce que contient chaque dossier, et pourquoi il existe.</div>
+
+  <h3>8.1 — Dans le dépôt GitHub : <code>data/</code></h3>
+  <p>Les données de départ, fournies par les organisateurs (jamais modifiées) : <code>Train.csv</code>, <code>Val.csv</code>, <code>Test.csv</code>, <code>SampleSubmission.csv</code> (un exemple du format de réponse attendu).</p>
+
+  <h3>8.2 — Sur Drive : <code>processed_data/</code></h3>
+  <p>Créé par le notebook 02. Contient les données <b>transformées</b>, prêtes pour l'entraînement :</p>
+  <ul>
+    <li><code>train_balanced.jsonl</code> — les 53 300 exemples d'entraînement, rééquilibrés et mis en forme.</li>
+    <li><code>dev_split.jsonl</code> — les 1 491 exemples de surveillance en cours d'entraînement.</li>
+    <li><code>val_formatted.jsonl</code> — <code>Val.csv</code> mis en forme, prêt pour l'évaluation.</li>
+  </ul>
+  <div class="box def"><span class="label">📖 Définition — <i>.jsonl</i></span> Un fichier <code>.jsonl</code> (<i>JSON Lines</i>) contient une ligne de données par ligne de fichier, chacune au format JSON (un format texte structuré, lisible par un programme). C'est un format pratique pour stocker beaucoup d'exemples similaires.</div>
+
+  <h3>8.3 — Sur Drive : <code>checkpoints/</code></h3>
+  <p>Créé par le notebook 03. C'est le dossier le plus important : il contient <b>ce que le modèle a appris</b>.</p>
+  <ul>
+    <li><code>gemma-4-e2b-lora-l4-bf16/checkpoint-XXXX/</code> — des sauvegardes intermédiaires prises pendant l'entraînement (aux pas 6400, 9900, 9996...), qui permettent de reprendre l'entraînement si la session Colab se coupe.</li>
+    <li><code>gemma-4-e2b-lora-final/</code> — l'adaptateur LoRA final (~115 Mo), celui qu'on réutilise dans les notebooks 04 et 05. Contient notamment <code>adapter_model.safetensors</code> (les poids appris) et <code>adapter_config.json</code> (les réglages utilisés, comme <code>r=16</code>).</li>
+  </ul>
+  <div class="box why">
+    <span class="label">💡 Rappel important</span>
+    Ce dossier ne contient <b>pas</b> le modèle Gemma complet — juste le petit "supplément" LoRA. C'est pour ça qu'il faut retélécharger Gemma depuis Hugging Face à chaque fois (question déjà répondue plus tôt dans cette conversation).
+  </div>
+
+  <h3>8.4 — Sur Drive : <code>eval_results/</code></h3>
+  <p>Créé par le notebook 04. Contient les résultats chiffrés de l'évaluation : <code>rouge_summary.csv</code> (scores globaux), <code>rouge_by_language.csv</code> (scores par langue), <code>val_eval_detailed.csv</code> (chaque question, sa vraie réponse, et les 2 réponses générées — avec et sans fine-tuning).</p>
+
+  <h3>8.5 — Sur Drive : <code>submissions/</code></h3>
+  <p>Créé par le notebook 05. Contient <code>submission_gemma4_e2b_finetuned.csv</code> : les 2 618 réponses finales générées pour <code>Test.csv</code>, au format attendu par Zindi (même si on ne soumet pas réellement).</p>
+
+  <h3>8.6 — Sur Drive : <code>logs/</code></h3>
+  <p>Prévu au départ (Phase 0) pour stocker des journaux d'entraînement détaillés (par exemple avec un outil comme TensorBoard). Dans notre cas, la progression de l'entraînement a été suivie directement dans les sorties affichées par Colab plutôt que via cet outil — ce dossier est donc resté peu utilisé.</p>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    <code>processed_data/</code> = les données prêtes à apprendre. <code>checkpoints/</code> = ce que le modèle a appris (l'adaptateur LoRA). <code>eval_results/</code> = les notes obtenues. <code>submissions/</code> = les réponses finales produites. Chaque dossier correspond à la sortie d'un notebook précis.
+  </div>
+</section>
+
+<!-- PARTIE 9 -->
+<section class="partie" id="p9">
+  <div class="partie-eyebrow">Partie 9 / 12</div>
+  <h2 class="partie-titre">Comprendre nos résultats</h2>
+
+  <div class="en-une-phrase">En une phrase : le fine-tuning a clairement amélioré les réponses du modèle, dans toutes les langues, mais l'écart entre l'anglais et les langues locales persiste.</div>
+
+  <h3>9.1 — C'est quoi le score ROUGE ?</h3>
+  <div class="box def"><span class="label">📖 Définition</span> <b>ROUGE</b> est une méthode qui compare automatiquement un texte généré par le modèle à un texte de référence (la vraie réponse), en comptant combien de mots (ou de suites de mots) ils ont en commun. Le score va de 0 (aucun mot en commun) à 1 (texte identique).</div>
+  <p>On utilise deux variantes : <b>ROUGE-1</b> (compare mot par mot, sans tenir compte de l'ordre) et <b>ROUGE-L</b> (compare la plus longue suite de mots communs dans le même ordre — plus strict).</p>
+
+  <h3>9.2 — Nos résultats globaux</h3>
+  <table>
+    <tr><th>Métrique</th><th>Sans fine-tuning (zero-shot)</th><th>Avec fine-tuning</th><th>Amélioration</th></tr>
+    <tr><td>ROUGE-1</td><td>0,1294</td><td>0,3667</td><td>×2,8</td></tr>
+    <tr><td>ROUGE-L</td><td>0,0794</td><td>0,3109</td><td>×3,9</td></tr>
+  </table>
+
+  <h3>9.3 — Nos résultats par langue</h3>
+  <table>
+    <tr><th>Langue</th><th>ROUGE-1 zero-shot</th><th>ROUGE-1 fine-tuné</th></tr>
+    <tr><td>Eng_Uga</td><td>0,185</td><td><b>0,573</b></td></tr>
+    <tr><td>Eng_Ken</td><td>0,204</td><td>0,495</td></tr>
+    <tr><td>Eng_Eth</td><td>0,070</td><td>0,456</td></tr>
+    <tr><td>Swa_Ken</td><td>0,197</td><td>0,373</td></tr>
+    <tr><td>Eng_Gha</td><td>0,185</td><td>0,362</td></tr>
+    <tr><td>Aka_Gha</td><td>0,095</td><td>0,266</td></tr>
+    <tr><td>Lug_Uga</td><td>0,007</td><td>0,186</td></tr>
+    <tr><td>Amh_Eth</td><td>0,051</td><td><b>0,156</b></td></tr>
+  </table>
+
+  <h3>9.4 — Ce que ça veut dire concrètement</h3>
+  <ul>
+    <li><b>Le fine-tuning a aidé sur toutes les langues, sans exception.</b> C'est la preuve que la méthode fonctionne.</li>
+    <li><b>Le cas le plus impressionnant : le luganda.</b> Avant fine-tuning, le modèle ne savait quasiment pas répondre en luganda (score proche de zéro — il répétait le même mot en boucle). Après fine-tuning, son score est multiplié par 27.</li>
+    <li><b>Mais l'écart entre langues persiste.</b> L'amharique et le luganda restent les langues où le modèle obtient les scores les plus bas, exactement comme l'EDA (Partie 4.4) l'avait laissé prévoir : ce sont les langues les moins bien connues du tokenizer de Gemma.</li>
+  </ul>
+
+  <div class="box ex">
+    <span class="label">🔍 Exemple concret d'amélioration qualitative</span>
+    Sur une question posée en akan, le modèle <b>sans</b> fine-tuning a répondu... en français ! Après fine-tuning, la même question obtient une réponse cohérente, en akan, sur le bon sujet.
+  </div>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    Le fine-tuning multiplie la qualité des réponses par 2,8 à 3,9 selon la mesure utilisée. Le modèle apprend même à "parler" une langue qu'il ne maîtrisait presque pas avant (luganda). La difficulté restante (amharique, luganda, akan un peu en retrait) est cohérente avec ce que l'analyse des données avait annoncé dès le départ.
+  </div>
+</section>
+
+<!-- PARTIE 10 -->
+<section class="partie" id="p10">
+  <div class="partie-eyebrow">Partie 10 / 12</div>
+  <h2 class="partie-titre">Les problèmes techniques rencontrés, expliqués simplement</h2>
+
+  <div class="en-une-phrase">En une phrase : travailler avec un modèle tout juste sorti, ça veut dire rencontrer (et résoudre) des bugs que personne n'a encore documentés.</div>
+
+  <p><code>google/gemma-4-E2B-it</code> est un modèle très récent. Résultat : plusieurs outils utilisés (les bibliothèques Python <code>transformers</code>, <code>peft</code>, <code>bitsandbytes</code>) n'étaient pas encore parfaitement à jour avec ses particularités. Voici les principaux problèmes rencontrés, en langage simple.</p>
+
+  <h4>Problème 1 — "Le modèle est trop gros pour la mémoire" (au moment de préparer l'entraînement)</h4>
+  <p>Une fonction censée préparer le modèle pour l'entraînement essayait de "dé-compresser" des parties énormes du modèle (le dictionnaire de mots, cf. Partie 2.3) d'un coup, ce qui demandait plus de mémoire que disponible. <b>Solution :</b> on a remplacé cette préparation par une version plus légère, qui fait juste le strict nécessaire.</p>
+
+  <h4>Problème 2 — "Certaines parties du modèle veulent aller sur le processeur (CPU) au lieu de la carte graphique (GPU)"</h4>
+  <p>Le système a mal évalué la mémoire disponible et a voulu mettre une partie du modèle sur le CPU (beaucoup plus lent). <b>Solution :</b> on a forcé explicitement tout le modèle à rester sur le GPU, en lui prouvant qu'il y a la place.</p>
+
+  <h4>Problème 3 — "Une pièce du modèle n'est pas reconnue"</h4>
+  <p>Gemma-4 utilise une pièce interne un peu spéciale (une couche avec un "plafonnement" de sécurité) que l'outil LoRA ne savait pas encore reconnaître. <b>Solution :</b> on a écrit un petit bout de code qui "déballe" cette pièce spéciale pour révéler la pièce standard qu'il y a dedans, que LoRA sait utiliser.</p>
+
+  <h4>Problème 4 — "Les deux fichiers de données ne se ressemblent pas assez"</h4>
+  <p>Deux fichiers de données (entraînement et surveillance) n'avaient pas exactement les mêmes colonnes, ce qui a fait planter le chargement. <b>Solution :</b> on les a rendus cohérents entre eux.</p>
+
+  <h4>Problème 5 — "Impossible de reprendre après une coupure"</h4>
+  <p>En changeant de GPU en cours de route (Partie 6.3 précise, T4 → L4), certains réglages internes de sauvegarde n'étaient plus compatibles avec les anciennes sauvegardes. <b>Solution :</b> on a créé un nouveau dossier de sauvegarde propre pour le nouveau GPU.</p>
+
+  <h4>Problème 6 — "Le modèle ne reçoit plus les bonnes informations"</h4>
+  <p>Un mécanisme de nettoyage automatique retirait par erreur les colonnes de texte dont on avait besoin. <b>Solution :</b> on a désactivé ce nettoyage automatique.</p>
+
+  <h4>Problème 7 — "Trop de questions à la fois"</h4>
+  <p>Le calcul de l'erreur du modèle (Partie 1.6, étape 2) demandait plus de mémoire que prévu quand on traitait 8 questions en même temps, à cause du très grand dictionnaire de Gemma. <b>Solution :</b> on est passé à 4 questions à la fois (en compensant pour garder le même résultat d'apprentissage global).</p>
+
+  <div class="box recap">
+    <span class="label">✅ Ce qu'il faut retenir</span>
+    Aucun de ces problèmes n'est une erreur de conception du projet : ce sont des frictions normales quand on utilise un modèle tout juste publié. Chacun a été diagnostiqué à partir d'un vrai message d'erreur, puis corrigé, un par un — c'est une part importante et normale du travail d'ingénierie en IA.
+  </div>
+</section>
+
+<!-- GLOSSAIRE -->
+<section class="partie" id="glossaire">
+  <div class="partie-eyebrow">Partie 11 / 12</div>
+  <h2 class="partie-titre">Glossaire complet (ordre alphabétique)</h2>
+
+  <dl class="glossaire">
+    <dt>Adaptateur (LoRA)</dt><dd>Les petites matrices supplémentaires entraînées par LoRA, sauvegardées à part du modèle de base.</dd>
+
+    <dt>Batch (lot)</dt><dd>Un petit paquet d'exemples traités en même temps par le modèle pendant l'entraînement, au lieu d'un seul à la fois — plus rapide et plus stable.</dd>
+
+    <dt>bf16 / fp16</dt><dd>Deux façons de stocker les nombres avec moins de précision que d'habitude, pour aller plus vite et utiliser moins de mémoire. <code>bf16</code> est plus stable mais demande un GPU récent (comme le L4) ; <code>fp16</code> fonctionne sur des GPU plus anciens (comme le T4).</dd>
+
+    <dt>Checkpoint</dt><dd>Une sauvegarde de l'état du modèle à un instant donné pendant l'entraînement, qui permet de reprendre sans repartir de zéro.</dd>
+
+    <dt>Embedding</dt><dd>Une liste de nombres qui représente le "sens" d'un mot ou d'un morceau de mot pour le modèle.</dd>
+
+    <dt>Epoch (époque)</dt><dd>Un passage complet sur tous les exemples d'entraînement.</dd>
+
+    <dt>EDA</dt><dd>Analyse exploratoire des données : regarder et comprendre les données avant de construire un modèle.</dd>
+
+    <dt>Fine-tuning</dt><dd>Spécialiser un modèle déjà pré-entraîné sur une tâche précise, avec un jeu de données plus petit.</dd>
+
+    <dt>Gradient checkpointing</dt><dd>Une technique qui économise de la mémoire pendant l'entraînement, en recalculant certaines informations au lieu de toutes les garder en mémoire (au prix d'un peu plus de temps de calcul).</dd>
+
+    <dt>GPU</dt><dd>Carte graphique — un composant informatique très efficace pour faire énormément de calculs mathématiques en parallèle, ce qui le rend indispensable pour l'IA.</dd>
+
+    <dt>Learning rate (taux d'apprentissage)</dt><dd>La taille du "pas" à chaque petit ajustement des poids pendant l'entraînement. Trop grand : le modèle apprend n'importe quoi. Trop petit : il apprend trop lentement.</dd>
+
+    <dt>LLM</dt><dd>Grand modèle de langage — un réseau de neurones entraîné sur d'énormes quantités de texte.</dd>
+
+    <dt>Loss (perte)</dt><dd>Un nombre qui mesure à quel point le modèle se trompe. Plus il est bas, mieux le modèle prédit.</dd>
+
+    <dt>LoRA</dt><dd>Technique qui gèle le modèle de base et n'entraîne que de petites matrices supplémentaires.</dd>
+
+    <dt>Machine Learning</dt><dd>Apprentissage automatique : un programme qui apprend à partir de données au lieu de suivre des règles écrites à la main.</dd>
+
+    <dt>Matrice</dt><dd>Un grand tableau de nombres organisé en lignes et colonnes.</dd>
+
+    <dt>Overfitting (sur-apprentissage)</dt><dd>Quand un modèle apprend "par cœur" les exemples d'entraînement au lieu de comprendre le principe général — il devient alors mauvais sur des exemples nouveaux.</dd>
+
+    <dt>PEFT</dt><dd><i>Parameter-Efficient Fine-Tuning</i> : la famille de techniques (dont LoRA) qui permettent de fine-tuner un modèle en n'entraînant qu'une petite partie de ses poids.</dd>
+
+    <dt>Poids (weight)</dt><dd>Un petit nombre réglable qui détermine l'importance d'une information dans le calcul d'un neurone.</dd>
+
+    <dt>Prompt</dt><dd>Le texte d'instruction/question donné en entrée au modèle.</dd>
+
+    <dt>Quantification</dt><dd>Compresser les nombres d'un modèle (par exemple en 4 bits au lieu de 16 ou 32) pour réduire la mémoire nécessaire.</dd>
+
+    <dt>QLoRA</dt><dd>LoRA appliqué à un modèle de base quantifié (compressé) — permet d'entraîner de grands modèles sur du matériel limité.</dd>
+
+    <dt>Réseau de neurones</dt><dd>Un programme organisé en couches de petites unités de calcul, qui apprend à partir d'exemples.</dd>
+
+    <dt>ROUGE</dt><dd>Une méthode qui mesure automatiquement la ressemblance entre un texte généré et un texte de référence.</dd>
+
+    <dt>Token</dt><dd>Un petit morceau de texte (mot ou partie de mot) — l'unité de base que le modèle manipule.</dd>
+
+    <dt>Tokenizer</dt><dd>L'outil qui découpe le texte en tokens et les convertit en nombres.</dd>
+
+    <dt>Zero-shot</dt><dd>Utiliser un modèle "tel quel", sans aucun fine-tuning sur la tâche précise — sert de point de comparaison pour mesurer l'apport du fine-tuning.</dd>
+  </dl>
+</section>
+
+<!-- POUR ALLER PLUS LOIN -->
+<section class="partie" id="suite">
+  <div class="partie-eyebrow">Partie 12 / 12</div>
+  <h2 class="partie-titre">Pour aller plus loin</h2>
+
+  <div class="en-une-phrase">En une phrase : vous avez maintenant les bases pour comprendre n'importe quel projet de fine-tuning de LLM — la suite, c'est de la pratique.</div>
+
+  <h3>Ce que vous savez faire, maintenant</h3>
+  <ul>
+    <li>Expliquer ce qu'est un poids, une matrice, un réseau de neurones, et ce que veut dire "entraîner" un modèle.</li>
+    <li>Expliquer comment un LLM transforme du texte en nombres, et génère sa réponse mot par mot.</li>
+    <li>Expliquer pourquoi on a choisi le fine-tuning plutôt que d'autres approches, avec des arguments concrets.</li>
+    <li>Expliquer LoRA et QLoRA avec vos propres mots, et à quoi servent <code>r</code>, <code>alpha</code>, la quantification 4-bit.</li>
+    <li>Décrire ce que fait chacun des 6 notebooks du projet, et pourquoi dans cet ordre.</li>
+    <li>Lire un tableau de résultats ROUGE et l'interpréter.</li>
+  </ul>
+
+  <h3>Trois pistes si vous voulez creuser encore</h3>
+  <ol>
+    <li><b>Relire ce document une deuxième fois</b>, une semaine après la première lecture — beaucoup de notions ici s'ancrent mieux à la relecture, une fois la structure générale déjà en tête.</li>
+    <li><b>Rouvrir un notebook</b> (par exemple <code>02_build_dataset.ipynb</code>) et essayer de retrouver, ligne de code par ligne de code, à quelle étape de ce cours elle correspond.</li>
+    <li><b>Reformuler à voix haute</b>, comme si vous l'expliquiez à quelqu'un qui n'y connaît rien — c'est souvent le meilleur test pour savoir ce qu'on a vraiment compris.</li>
+  </ol>
+
+  <div class="footer-note">
+    Document généré pour accompagner le projet gemmafro-e2b (Master 2 BI, UCAD). Voir aussi <code>docs/RAPPORT.md</code> (rapport de projet détaillé) et <code>docs/SLIDES.md</code> (plan de présentation).
+  </div>
+</section>
+
+</body>
+</html>
