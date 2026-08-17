@@ -193,6 +193,20 @@ L'inspection manuelle d'exemples générés confirme et enrichit les résultats 
 - **Le zero-shot peut produire des sorties dégénérées** sur les langues les moins représentées dans le pré-entraînement de Gemma : sur une question en luganda, la génération zero-shot a bouclé sur la répétition du mot "*kye*" des dizaines de fois consécutives — signe caractéristique d'un modèle hors de sa distribution d'entraînement. Après fine-tuning, la réponse devient un texte luganda cohérent et sur le sujet.
 - **Une limite à signaler** : une réponse fine-tunée générée pour une question sur la PrEP (prophylaxie pré-exposition) contient la formule "*As of my last knowledge update in September 2021*" — un artefact typique des LLM généralistes, révélateur d'une réponse partiellement puisée dans les connaissances générales pré-entraînées du modèle plutôt qu'entièrement ancrée sur les données d'entraînement spécifiques au domaine.
 
+### 4.3 Prédictions finales sur le jeu de test
+
+Le pipeline complet a été exécuté jusqu'au bout (notebook `05_generate_submission.ipynb`) : le modèle fine-tuné a généré une réponse pour chacune des **2 618 questions de `Test.csv`**, sans erreur, avec les vérifications automatiques de format validées (IDs correspondants, pas de doublons, pas de valeurs vides). Un exemple par langue illustre la cohérence linguistique et thématique obtenue :
+
+| Langue | Question (extrait) | Réponse générée (extrait) |
+|---|---|---|
+| Akan | *Fa nneɛma a wɔde bɛyɛ nkyerɛkyerɛ nneɛma...* | *Amanneɛbɔ ne Nsɛm a Wɔka Kyerɛ: Amanneɛbɔ ne nneɛma a wɔde bɛyɛ nkyerɛkyerɛ nneɛma...* |
+| Amharique | *ክላሚዲያ ሳይታከም ቢቆይ በወንዶች ላይ የሚያስከትለው የረጅም ጊዜ ጉዳት ምንድን ነው?* | *የመካን መፍሰስ ሲያደንቅ፣ የሽንት ቱቦዎች እብጠት (urethritis) እና በከብት መራቢያ አካላት ላይ ጉዳት ሊያደርስ ይችላል።* |
+| Anglais (Ouganda) | *Treatment for Gonorrhea?, please answer this using simple medical terms.* | *Gonorrhoa is caused by a bacteria called Neisseria Gonorrhea. Bacterial infections are treated by use of antibiotics...* |
+| Luganda | *Bitundu ki eby'omubiri ebirina okuyonjebwa n'obwegendereza?* | *Obusannyalaze bw'omubiri bukyuka mu kiseera ky'okuvubuka kubanga omubiri gwo gwetegekera okukula...* |
+| Swahili | *Je, mtu mwenye afya nzuri anaweza kuambukizwa virusi vya ukimwi/UKIMWI?* | *Mtu mwenye afya nzuri anaweza kuambukizwa virusi vya ukimwi/UKIMWI. Kuwa na afya nzuri kunakusaidia...* |
+
+Ces exemples confirment, sur des données jamais vues pendant l'entraînement, ce qu'indiquaient déjà les scores ROUGE et l'inspection qualitative sur `Val.csv` : des réponses fluides, dans la langue attendue, et thématiquement pertinentes par rapport à la question posée. Le fichier complet des 2 618 prédictions est sauvegardé sur Google Drive (`submissions/submission_gemma4_e2b_finetuned.csv`) ; il n'a pas été soumis à la plateforme Zindi, ce projet étant un exercice académique.
+
 ---
 
 ## 5. Limites et pistes d'amélioration

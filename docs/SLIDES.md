@@ -126,7 +126,17 @@ Plan slide par slide (titre + puces) à recopier dans PowerPoint / Google Slides
 
 ---
 
-### Slide 17 — Limites
+### Slide 17 — Prédictions finales sur le jeu de test
+- Pipeline exécuté de bout en bout : 2 618 réponses générées sur `Test.csv`, aucune erreur, format validé automatiquement
+- Un exemple par langue (extraits) :
+  - Amharique : *ክላሚዲያ ሳይታከም ቢቆይ...* → *የመካን መፍሰስ ሲያደንቅ፣ የሽንት ቱቦዎች እብጠት (urethritis)...*
+  - Luganda : *Bitundu ki eby'omubiri...* → *Obusannyalaze bw'omubiri bukyuka mu kiseera ky'okuvubuka...*
+  - Swahili : *Je, mtu mwenye afya nzuri anaweza kuambukizwa...* → *Mtu mwenye afya nzuri anaweza kuambukizwa...*
+- Fichier complet sauvegardé sur Drive — projet académique, pas de soumission officielle à Zindi
+
+---
+
+### Slide 18 — Limites
 - Écart persistant sur amharique/luganda malgré le rééquilibrage
 - Aucune validation médicale experte des réponses générées
 - Métrique `TargetLLM` (LLM-as-judge) non mise en œuvre (nécessite une clé API)
@@ -134,7 +144,7 @@ Plan slide par slide (titre + puces) à recopier dans PowerPoint / Google Slides
 
 ---
 
-### Slide 18 — Pistes d'amélioration
+### Slide 19 — Pistes d'amélioration
 - Fine-tuning séparé par langue pour les langues les plus faibles
 - Évaluation complète sur tout `Val.csv`
 - Mise en œuvre de la métrique LLM-as-judge
@@ -142,14 +152,14 @@ Plan slide par slide (titre + puces) à recopier dans PowerPoint / Google Slides
 
 ---
 
-### Slide 19 — Conclusion
-- Pipeline complet et documenté : EDA → préparation → fine-tuning → évaluation
+### Slide 20 — Conclusion
+- Pipeline complet et documenté : EDA → préparation → fine-tuning → évaluation → prédictions finales
 - Gain net et mesuré du fine-tuning (×2,8 à ×3,9 selon la métrique)
 - Principal enseignement : la couverture linguistique inégale du modèle pré-entraîné reste le facteur limitant majeur, anticipé dès l'EDA
 - Projet représentatif des défis réels du fine-tuning de LLM récents sur infrastructure limitée
 
 ---
 
-### Slide 20 — Merci / Questions
+### Slide 21 — Merci / Questions
 - Dépôt du projet : github.com/andilMc/gemmafro-e2b
 - Questions ?
