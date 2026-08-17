@@ -1,6 +1,6 @@
 # Multilingual Health QA — Fine-tuning Gemma E2B
 
-Projet de classe (Master 2 BI) pour le défi Zindi **Multilingual Health Question Answering in Low-Resource African Languages Challenge**, organisé en collaboration avec HASH et Makerere University.
+Projet de classe (Master 2 BI, UCAD) basé sur le défi Zindi **Multilingual Health Question Answering in Low-Resource African Languages Challenge**, organisé en collaboration avec HASH et Makerere University. Projet académique — pas de soumission officielle au challenge ; livrables attendus : rapport écrit et présentation en classe.
 
 ## Structure du dépôt
 
@@ -15,7 +15,9 @@ gemmafro-e2b/
 
 - [docs/PROJET.md](docs/PROJET.md) — objet du challenge, contexte, données, métriques d'évaluation.
 - [docs/FICHIERS.md](docs/FICHIERS.md) — détail de chaque fichier du dépôt et de sa nécessité.
-- [docs/WORKFLOW.md](docs/WORKFLOW.md) — workflow suivi pour le fine-tuning de Gemma E2B sur Google Colab (GPU T4 gratuit), phase par phase.
+- [docs/WORKFLOW.md](docs/WORKFLOW.md) — workflow suivi pour le fine-tuning de Gemma E2B sur Google Colab, phase par phase.
+- [docs/RAPPORT.md](docs/RAPPORT.md) — rapport de projet détaillé (contexte, méthode, résultats, limites).
+- [docs/SLIDES.md](docs/SLIDES.md) — plan de présentation slide par slide, pour PowerPoint/Google Slides.
 
 ## Données (`data/`)
 
