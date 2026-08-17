@@ -170,6 +170,8 @@ Notebook prêt à l'emploi : [`notebooks/03_finetune.ipynb`](../notebooks/03_fin
 
 ## Phase 4 — Évaluation
 
+Notebook prêt à l'emploi : [`notebooks/04_evaluate.ipynb`](../notebooks/04_evaluate.ipynb) (charge l'adaptateur final de la Phase 3, génère fine-tuné + zero-shot via `model.disable_adapter()`, calcule ROUGE par langue, sauvegarde les résultats sur Drive).
+
 - [ ] Réutiliser (ou adapter depuis le notebook starter) la fonction `compute_rouge` avec tokenizer whitespace (safe pour les écritures non-latines) pour calculer **ROUGE-1 F1** et **ROUGE-L F1** sur `Val.csv`.
 - [ ] Décomposer les scores **par langue** (`subset`) — c'est le diagnostic le plus important : il révèle si le modèle sous-performe sur les langues à faibles ressources.
 - [ ] Approximer localement la métrique **TargetLLM** (LLM-as-a-judge) en utilisant un modèle plus puissant (ex. un LLM disponible via API) pour noter un échantillon de réponses générées vs. réponses de référence, avant la soumission officielle sur Zindi.
