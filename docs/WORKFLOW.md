@@ -185,6 +185,8 @@ Notebook prêt à l'emploi : [`notebooks/04_evaluate.ipynb`](../notebooks/04_eva
 
 ## Phase 6 — Génération de la soumission finale
 
+Notebook prêt à l'emploi : [`notebooks/05_generate_submission.ipynb`](../notebooks/05_generate_submission.ipynb) (couvre les points ci-dessous, sauvegarde le fichier de soumission sur Drive).
+
 - [ ] Charger le meilleur checkpoint LoRA (fusionné ou chargé en adaptateur) et générer les réponses pour toutes les questions de `Test.csv`, avec le **même prompt** qu'à l'entraînement (langue résolue depuis `subset`).
 - [ ] Nettoyer les sorties (retirer tokens spéciaux résiduels, espaces superflus).
 - [ ] Construire le fichier de soumission au format exact de `SampleSubmission.csv` : colonnes `ID`, `TargetRLF1`, `TargetR1F1`, `TargetLLM`, les trois contenant la même réponse générée.
