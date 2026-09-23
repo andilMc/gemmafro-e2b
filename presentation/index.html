@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Soutenance — QA santé multilingue</title>
+<title>Présentation — QA santé multilingue</title>
 <link rel="stylesheet" href="assets/css/slides.css">
 </head>
 <body>
@@ -269,30 +269,45 @@
   </ul>
 </section>
 
-<!-- BLOC 5 — HAMIDOU (~3 min, démo à la fin) : slides 13-14 -->
+<!-- BLOC 5 — HAMIDOU (~3 min) : slides 13-15 -->
 
-<!-- 13 — DEMO -->
+<!-- 13 — INTERFACE DE TEST -->
 <section class="slide">
   <div class="presenter-tag"><span class="dot"></span>Hamidou</div>
-  <div class="eyebrow">Démonstration</div>
-  <h2 class="slide-title">Pour finir — démo en direct sur Gemma E2B</h2>
+  <div class="eyebrow">Notre interface de test</div>
+  <h2 class="slide-title">Manipuler directement Gemma E2B fine-tuné</h2>
   <div class="cols">
     <div class="col">
       <div class="card">
-        <img src="assets/img/demo_gradio_screenshot.png" alt="Démo Gradio">
+        <img src="assets/img/demo_gradio_screenshot.png" alt="Interface de test Gradio">
       </div>
     </div>
     <div class="col">
       <ul class="bullets">
-        <li>Interface Gradio, réponse générée en <b>streaming</b> (mot par mot)</li>
+        <li>Interface Gradio construite pour tester le modèle : réponse générée en <b>streaming</b> (mot par mot)</li>
         <li>Fine-tuné et zero-shot générés <b>en parallèle</b>, sur deux modèles séparés en mémoire</li>
-        <li>Testée en conditions réelles — fonctionne, y compris la reproduction du bug de répétition en zero-shot</li>
+        <li>Testée en conditions réelles tout au long du développement</li>
       </ul>
     </div>
   </div>
 </section>
 
-<!-- 14 — MERCI -->
+<!-- 14 — CE QUE CE TEST A REVELE -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Hamidou</div>
+  <div class="eyebrow">Ce que ce test a révélé</div>
+  <h2 class="slide-title">Le bug de répétition, encore une fois</h2>
+  <div class="verdict" style="margin-top:10px;">
+    <div class="verdict-label">Exemple observé pendant le test</div>
+    <p>En akan, le modèle <em>zero-shot</em> boucle sur un mot répété (« sɛn ɛyɛ sɛn ɛyɛ... ») au lieu de répondre — la version <em>fine-tunée</em>, elle, répond correctement à la même question.</p>
+  </div>
+  <ul class="bullets" style="margin-top:20px;">
+    <li>Même mode de dégénérescence déjà observé sur le <b>luganda</b> en section 5.4 du rapport (ROUGE-1 = 0,005 en zero-shot)</li>
+    <li>Confirmation sur une <b>deuxième langue</b>, en conditions réelles, que le fine-tuning corrige ce problème de façon fiable</li>
+  </ul>
+</section>
+
+<!-- 15 — MERCI -->
 <section class="slide closing">
   <div class="presenter-tag"><span class="dot"></span>Hamidou</div>
   <img src="assets/img/ucad_logo.svg" alt="UCAD" style="width:64px;height:64px;margin-bottom:28px;">

@@ -48,7 +48,7 @@ body { counter-reset: slidenum; }
 }
 .slide::before {
   counter-increment: slidenum;
-  content: counter(slidenum, decimal-leading-zero) " / 14";
+  content: counter(slidenum, decimal-leading-zero) " / 15";
   position: absolute;
   left: 88px;
   bottom: 28px;
