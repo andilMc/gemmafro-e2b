@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Répondre à des questions de santé en akan, luganda, swahili et amharique</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div class="cover">
+  <img src="assets/img/logo/ucad_logo.svg" alt="Logo de l'Université Cheikh Anta Diop de Dakar" class="cover-logo">
+  <div class="cover-university">Université Cheikh Anta Diop de Dakar</div>
+  <div class="cover-faculty">Master 2 Business Intelligence — Cours de Traitement Automatique du Langage Naturel</div>
+  <hr class="cover-rule">
+  <div class="cover-kicker">Projet de fin de cours</div>
+  <h1>Répondre à des questions de santé en akan, luganda, swahili et amharique</h1>
+  <p class="subtitle">Challenge Zindi — Modèles de questions-réponses médicales multilingues<br>
+  Comparaison de trois approches : retrieval TF-IDF, LLM multilingue NLLB-200 (zero-shot et fine-tuné), mT5-small (full fine-tuning) et Gemma E2B (QLoRA)</p>
+  <hr class="cover-rule cover-rule-sm">
+  <div class="cover-presented-by">Présenté par</div>
+  <div class="team">
+    <div>Andil Mchangama</div>
+    <div>Nasma Youssouf M'madi</div>
+    <div>Abdoulaye Diouf</div>
+    <div>Harouna Mbaye</div>
+    <div>Hamidou Mbodji</div>
+  </div>
+  <div class="cover-date">Dakar, 2026</div>
+</div>
+
+<nav class="toc">
+  <h2>Sommaire</h2>
+  <ol>
+    <li><a href="#contexte">Contexte et objectifs du projet</a></li>
+    <li><a href="#baselines">Point de départ du challenge — baselines fournies par Zindi</a></li>
+    <li><a href="#donnees">Exploration des données</a></li>
+    <li><a href="#mt5">Modèle 1 — mT5-small (full fine-tuning)</a></li>
+    <li><a href="#gemma">Modèle 2 — Gemma E2B (QLoRA)</a></li>
+    <li><a href="#comparaison">Comparaison des modèles</a></li>
+    <li><a href="#difficultes">Difficultés techniques rencontrées et résolues</a></li>
+    <li><a href="#conclusion">Conclusion et recommandations</a></li>
+  </ol>
+</nav>
+
+<div class="page">
+
+<section id="contexte">
+  <h2>1. Contexte et objectifs du projet</h2>
+  <p>Le challenge vise à entraîner un modèle capable de répondre à des questions de santé — santé sexuelle et reproductive notamment — directement dans la langue locale de l'utilisateur, plutôt qu'en anglais uniquement. C'est ce choix de terrain qui a guidé nos décisions tout au long du projet : une bonne partie des populations concernées ne lit ni n'écrit l'anglais couramment, et une réponse médicale mal comprise perd toute son utilité, aussi juste soit-elle sur le plan clinique.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Langues couvertes par le jeu de données, réparties en 8 sous-ensembles pays/langue.</caption>
+      <thead><tr><th>Langue</th><th>Pays / subset</th></tr></thead>
+      <tbody>
+        <tr><td>English</td><td>Uganda (Eng_Uga), Ghana (Eng_Gha), Éthiopie (Eng_Eth), Kenya (Eng_Ken)</td></tr>
+        <tr><td>Akan</td><td>Ghana (Aka_Gha)</td></tr>
+        <tr><td>Luganda</td><td>Uganda (Lug_Uga)</td></tr>
+        <tr><td>Swahili</td><td>Kenya (Swa_Ken)</td></tr>
+        <tr><td>Amharique</td><td>Éthiopie (Amh_Eth)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Pour répondre à ce défi, nous avons choisi d'explorer <strong>deux approches complémentaires</strong> plutôt que de nous limiter à une seule, afin de pouvoir comparer leurs compromis respectifs :</p>
+  <ul>
+    <li><strong>mT5-small</strong> (Google) — un modèle Sequence-to-Sequence multilingue, que nous avons entraîné en <em>full fine-tuning</em> (tous les paramètres mis à jour) ;</li>
+    <li><strong>Gemma E2B</strong> (Google) — un modèle génératif plus récent et beaucoup plus volumineux, que nous avons adapté par <em>QLoRA</em> (quantification 4-bit + adaptateurs LoRA), une technique d'adaptation efficace en paramètres.</li>
+  </ul>
+  <p>Ce choix n'était pas arbitraire : mT5-small est le modèle explicitement recommandé par le notebook de démarrage Zindi pour un premier run rapide (section suivante), tandis que Gemma E2B nous permettait de tester une approche plus ambitieuse, à la mesure de ce qu'un modèle génératif récent peut apporter sur cette tâche — au prix d'un budget de calcul largement supérieur, que nous détaillons plus loin.</p>
+</section>
+
+<section id="baselines">
+  <h2>2. Point de départ du challenge — baselines fournies par Zindi</h2>
+  <p>Avant de développer nos propres pipelines, nous avons pris connaissance du notebook de démarrage (<em>« starter notebook »</em>) fourni par Zindi. Ce notebook n'est pas notre travail : c'est le code de référence proposé par l'organisateur, que nous avons exécuté tel quel pour disposer d'un point de comparaison indépendant avant d'entraîner nos deux modèles.</p>
+
+  <h3>2.1 Baseline 1 — Retrieval TF-IDF</h3>
+  <p>La première approche ne fait appel à aucun réseau de neurones : pour chaque question de test, elle recherche la question d'entraînement la plus proche par similarité cosinus sur des <strong>n-grammes de caractères</strong> — un choix qui fonctionne indépendamment du système d'écriture (latin ou guèze pour l'amharique), sans avoir besoin d'un tokeniseur propre à chaque langue.</p>
+
+  <figure class="code">
+    <img src="assets/img/code/06_tfidf_retrieval.png" alt="Classe TfidfRetrievalAnswerer">
+    <figcaption>Extrait — <code>TfidfRetrievalAnswerer</code>, baseline de retrieval par n-grammes de caractères.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Langue</th><th>ROUGE-1</th><th>ROUGE-L</th></tr></thead>
+      <tbody>
+        <tr><td>Swa_Ken</td><td>0,6031</td><td>0,5672</td></tr>
+        <tr><td>Eng_Ken</td><td>0,5989</td><td>0,5606</td></tr>
+        <tr><td>Eng_Eth</td><td>0,5170</td><td>0,4994</td></tr>
+        <tr><td>Eng_Uga</td><td>0,5163</td><td>0,4709</td></tr>
+        <tr><td>Lug_Uga</td><td>0,5155</td><td>0,4935</td></tr>
+        <tr><td>Aka_Gha</td><td>0,2832</td><td>0,1674</td></tr>
+        <tr><td>Eng_Gha</td><td>0,2582</td><td>0,1707</td></tr>
+        <tr><td>Amh_Eth</td><td>0,1455</td><td>0,1353</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Sur l'ensemble du jeu de validation : ROUGE-1 = 0,4207 / ROUGE-L = 0,3655.</p>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Ce résultat nous a surpris par sa solidité pour une méthode aussi simple, sans aucun entraînement de réseau de neurones — nous l'avons gardé comme repère de comparaison pour la suite. Nous restons toutefois prudents sur ce que ce score signifie réellement : le TF-IDF <em>recopie</em> une réponse humaine existante plutôt que d'en générer une nouvelle, ce qui gonfle mécaniquement son score ROUGE sans garantir que la réponse recopiée réponde bien à la question posée.
+  </div>
+
+  <h3>2.2 Baseline 2 — LLM multilingue en zero-shot</h3>
+  <p>Le notebook propose trois modèles possibles en commentaire (<code>google/mt5-small</code>, <code>google/mt5-base</code>, <code>facebook/nllb-200-distilled-600M</code>) — seul ce dernier est effectivement chargé dans le run que nous avons exécuté. Le prompt utilisé ne contient aucune instruction de tâche ni nom de langue : la question brute est envoyée telle quelle au modèle.</p>
+  <figure class="code">
+    <img src="assets/img/code/10_prompt_zeroshot_nllb.png" alt="Fonction build_prompt sans instruction de tâche">
+    <figcaption>Extrait — <code>build_prompt()</code>, la version avec instruction de tâche est commentée dans le notebook de départ.</figcaption>
+  </figure>
+  <p>Sur un échantillon de 200 exemples de <code>Val.csv</code> (le notebook de démarrage n'évalue pas cette baseline sur l'ensemble complet, contrairement au retrieval TF-IDF ci-dessus) : ROUGE-1 = 0,0074 / ROUGE-L = 0,0071, avec plusieurs langues exactement à 0. En inspectant les réponses générées, nous avons compris pourquoi : NLLB est un modèle de <strong>traduction</strong>, pas de question-réponse, et sans instruction de tâche, il traduit la question au lieu d'y répondre — un exemple généré finit en russe, un autre en français, sans lien avec une réponse médicale.</p>
+
+  <h3>2.3 Comparaison des deux baselines</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Baseline</th><th>ROUGE-1 F1</th><th>ROUGE-L F1</th></tr></thead>
+      <tbody>
+        <tr><td>TF-IDF Retrieval</td><td>0,4135</td><td>0,3581</td></tr>
+        <tr><td>LLM zero-shot (NLLB-200)</td><td>0,0074</td><td>0,0071</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2.4 Fine-tuning bonus du LLM (NLLB)</h3>
+  <p>Le notebook propose enfin de fine-tuner ce même NLLB sur nos données d'entraînement (3 epochs, batch 8, <code>Seq2SeqTrainer</code>).</p>
+  <figure class="code">
+    <img src="assets/img/code/11_finetune_config_nllb.png" alt="Configuration du fine-tuning NLLB">
+    <figcaption>Extrait — configuration du fine-tuning bonus proposée par le notebook de démarrage.</figcaption>
+  </figure>
+  <div class="table-wrap">
+    <table>
+      <caption>Résultats par langue (jeu de validation complet, fine-tuné).</caption>
+      <thead><tr><th>Langue</th><th>ROUGE-1</th><th>ROUGE-L</th></tr></thead>
+      <tbody>
+        <tr><td>Eng_Uga</td><td>0,4122</td><td>0,3527</td></tr>
+        <tr><td>Eng_Eth</td><td>0,3930</td><td>0,3683</td></tr>
+        <tr><td>Aka_Gha</td><td>0,3481</td><td>0,2243</td></tr>
+        <tr><td>Eng_Gha</td><td>0,3302</td><td>0,2457</td></tr>
+        <tr><td>Swa_Ken</td><td>0,2917</td><td>0,2013</td></tr>
+        <tr><td>Eng_Ken</td><td>0,2534</td><td>0,1777</td></tr>
+        <tr><td>Lug_Uga</td><td>0,1668</td><td>0,1243</td></tr>
+        <tr><td>Amh_Eth</td><td>0,1356</td><td>0,1248</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Sur l'ensemble du jeu de validation (6 686 exemples) : ROUGE-1 = 0,3176 / ROUGE-L = 0,2484.</p>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Le fine-tuning fait un bond considérable par rapport au zero-shot (de ~0,007 à ~0,32), mais reste en dessous du simple retrieval TF-IDF (0,41/0,36) — un rappel utile qu'un plus gros modèle fine-tuné ne bat pas toujours une méthode naïve bien conçue, surtout sans prompt informatif sur la langue cible. Nous retrouvons déjà ici, pour une troisième méthode indépendante, le même constat que dans nos deux pipelines : <strong>l'amharique et le luganda restent les langues les plus faibles</strong>, ce qui nous a renforcés dans l'idée que ces deux langues sont structurellement les plus difficiles du jeu de données, quel que soit le modèle utilisé.
+  </div>
+  <p>Le notebook Zindi suggère explicitement <strong>mT5-small comme premier choix</strong>, « pour un premier run rapide », avant de recommander de passer à des modèles plus lourds. C'est directement ce qui a motivé notre choix de l'approfondir en un pipeline complet de full fine-tuning (section 4), en complément d'une seconde approche plus ambitieuse sur Gemma E2B (section 5).</p>
+</section>
+
+<section id="donnees">
+  <h2>3. Exploration des données</h2>
+  <p>Nos deux pipelines partent du même jeu de données brut. Nous avons mené cette exploration deux fois, indépendamment, dans chacun des deux pipelines — et nous sommes arrivés aux mêmes constats de base, ce qui nous a rassurés sur leur fiabilité.</p>
+
+  <h3>3.1 Chargement et contrôle qualité</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Jeu</th><th>Lignes</th><th>Colonnes</th></tr></thead>
+      <tbody>
+        <tr><td>Train</td><td>29 815</td><td>4 (ID, input, output, subset)</td></tr>
+        <tr><td>Val</td><td>6 686</td><td>4</td></tr>
+        <tr><td>Test</td><td>2 618</td><td>3 (output absent, à prédire)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Les trois jeux sont propres structurellement : aucune valeur manquante, aucun ID dupliqué, types cohérents. Nous n'avons donc eu aucun nettoyage structurel à faire avant la Phase 2 — notre travail de préparation a pu se concentrer sur le contenu (déséquilibre entre langues, longueurs des textes).
+  </div>
+
+  <h3>3.2 Distribution des langues</h3>
+  <p>Le dataset présente un déséquilibre net entre les 8 sous-ensembles langue/pays : la langue la plus représentée (Eng_Uga) pèse plus de 4 fois la moins représentée (Amh_Eth).</p>
+  <figure>
+    <img src="assets/img/charts/distribution_langues.png" alt="Distribution des langues Train vs Val">
+    <figcaption>Distribution des langues, Train vs Val (pipeline Gemma).</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/img/charts/repartition_langues_mt5.png" alt="Répartition des langues, pipeline mT5">
+    <figcaption>Même constat, retrouvé indépendamment dans le pipeline mT5.</figcaption>
+  </figure>
+  <p>C'est ce déséquilibre qui nous a poussés, dans le pipeline Gemma, à sur-échantillonner les langues minoritaires avant l'entraînement (section 5.2).</p>
+
+  <h3>3.3 Longueur des séquences et efficacité de la tokenisation</h3>
+  <div class="two-up">
+    <figure>
+      <img src="assets/img/charts/longueur_reponses.png" alt="Longueur moyenne des réponses par langue">
+      <figcaption>Longueur moyenne des réponses (tokens) par langue.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/img/charts/tokens_par_mot.png" alt="Tokens par mot par langue">
+      <figcaption>Efficacité de la tokenisation Gemma (tokens/mot).</figcaption>
+    </figure>
+  </div>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Le tokeniseur fragmente fortement les langues africaines peu dotées en ressources (luganda 3,06 tokens/mot, amharique 3,01, akan 2,24, swahili 2,09), contre un ratio proche de 1,2–1,3 pour les variantes en anglais. Nous en avons déduit que ces langues sont peu représentées dans le vocabulaire des tokeniseurs pré-entraînés — un signal que nous avons retrouvé plus tard, de façon cohérente, dans les résultats d'évaluation des deux modèles.
+  </div>
+</section>
+
+<section id="mt5">
+  <h2>4. Modèle 1 — mT5-small (full fine-tuning)</h2>
+  <p>Le premier modèle que nous avons entraîné est <strong>mT5-small</strong> (300 millions de paramètres), en <em>full fine-tuning</em> — un choix cohérent avec sa taille raisonnable, qui rend cette approche abordable sur un seul GPU Colab, contrairement à Gemma E2B (section 5).</p>
+
+  <h3>4.1 Pré-traitement</h3>
+  <p>Nous avons structuré la préparation du jeu de données mT5 en un pipeline en six étapes, du CSV brut jusqu'aux identifiants numériques exploitables par le modèle :</p>
+  <div class="pipeline">
+    <ol>
+      <li>Charger les données<span>CSV → Pandas</span></li>
+      <li>Explorer et contrôler la qualité<span>valeurs manquantes, doublons, dimensions</span></li>
+      <li>Nettoyer<span>espaces superflus + normalisation Unicode NFC</span></li>
+      <li>Convertir<span>DataFrame → Hugging Face <code>Dataset</code></span></li>
+      <li>Charger le tokenizer mT5<span><code>google/mt5-small</code>, SentencePiece, 101 langues</span></li>
+      <li>Tokeniser<span>questions → <code>input_ids</code>, réponses → <code>labels</code></span></li>
+    </ol>
+  </div>
+  <p>Nous avons normalisé les caractères en Unicode NFC avant tokenisation, pour éviter que deux textes visuellement identiques soient tokenisés différemment selon leur encodage d'origine — un risque réel vu le mélange de systèmes d'écriture de notre dataset (latin, Ge'ez).</p>
+
+  <figure class="code">
+    <img src="assets/img/code/09_verification_tokenizer.png" alt="Contrôle visuel du tokenizer mT5">
+    <figcaption>Extrait — contrôle visuel du tokenizer sur un exemple réel avant de l'appliquer à tout le dataset.</figcaption>
+  </figure>
+  <p>Avant de tokeniser l'ensemble du dataset, nous avons voulu voir concrètement ce que le tokenizer SentencePiece de mT5 fait d'un exemple réel : texte d'origine, tokens obtenus, puis identifiants numériques. Ce contrôle nous a permis de repérer que les caractères spéciaux de l'akan (Ɔ, ɛ) sont souvent découpés en sous-tokens séparés du reste du mot — signe que ces caractères sont sous-représentés dans le vocabulaire pré-entraîné, un phénomène que nous avons retrouvé plus tard, encore plus marqué, sur l'amharique (alphabet Ge'ez) et que nous relions directement au constat de la section 3.3.</p>
+
+  <p>Nous avons fixé une longueur maximale de 128 tokens pour les questions et 256 tokens pour les réponses, avec troncature au-delà — un choix directement dérivé des longueurs mesurées en section 3.3 : les réponses sont systématiquement plus longues que les questions (voir la figure « Longueur moyenne des réponses par langue »), il fallait donc leur laisser nettement plus de marge qu'aux questions. Le plafond de 256 couvre la grande majorité des réponses observées sans pour autant gonfler inutilement les séquences les plus courtes.</p>
+
+  <h3>4.2 Entraînement</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Paramètre</th><th>Valeur</th></tr></thead>
+      <tbody>
+        <tr><td>Epochs</td><td>2</td></tr>
+        <tr><td>Batch size (train/eval)</td><td>4 par device</td></tr>
+        <tr><td>Gradient accumulation</td><td>2 (batch effectif = 8)</td></tr>
+        <tr><td>Learning rate</td><td>3 × 10⁻⁴ (avec warmup)</td></tr>
+        <tr><td>Weight decay</td><td>0,01</td></tr>
+        <tr><td>Optimiseur</td><td>Adafactor</td></tr>
+        <tr><td>Précision</td><td>FP16/BF16 désactivés</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Nous avons choisi l'optimiseur <strong>Adafactor</strong> plutôt qu'AdamW parce que c'est l'optimiseur historiquement utilisé pour pré-entraîner toute la famille T5/mT5 — rester cohérent avec l'optimiseur d'origine nous a semblé plus sûr qu'un choix générique. C'est aussi ce qui a guidé notre choix de <code>learning_rate=3×10⁻⁴</code> : c'est la valeur reprise par les scripts officiels Hugging Face de fine-tuning T5/mT5 (<code>run_translation.py</code>, <code>run_summarization.py</code>) spécifiquement pour un entraînement avec Adafactor — une valeur déjà éprouvée sur ce couple modèle/optimiseur, que nous avons préférée à un balayage de taux d'apprentissage que notre budget de calcul (un seul GPU Colab) ne permettait pas de mener sérieusement. Nous avons désactivé le calcul en précision réduite (FP16/BF16) après avoir constaté que mT5 y est numériquement instable ; le T4 fourni par Colab ne gère de toute façon pas le bf16 efficacement. Le batch effectif de 8 (4 par device × 2 d'accumulation) est un compromis pour limiter la consommation mémoire du T4 tout en gardant un batch statistiquement raisonnable.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Évolution de la loss pendant l'entraînement (7 454 steps, 2 epochs).</caption>
+      <thead><tr><th>Step</th><th>Training Loss</th><th>Validation Loss</th></tr></thead>
+      <tbody>
+        <tr><td>1 000</td><td>6,9456</td><td>2,8372</td></tr>
+        <tr><td>2 000</td><td>6,0090</td><td>2,4809</td></tr>
+        <tr><td>3 000</td><td>5,5638</td><td>2,3054</td></tr>
+        <tr><td>4 000</td><td>5,0619</td><td>2,1952</td></tr>
+        <tr><td>5 000</td><td>4,9497</td><td>2,1155</td></tr>
+        <tr><td>6 000</td><td>4,8403</td><td>2,0671</td></tr>
+        <tr><td>7 000</td><td>4,8294</td><td>2,0425</td></tr>
+        <tr><td>7 454</td><td>4,7372</td><td>2,0376</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure>
+    <img src="assets/img/charts/courbe_perte_mt5.png" alt="Courbe de perte mT5">
+    <figcaption>Courbe de perte — 7 454 steps, 2 epochs, ~2h33 d'entraînement sur GPU T4.</figcaption>
+  </figure>
+  <div class="callout">
+    <span class="label">Constat</span>
+    La training loss diminue de 6,95 à 4,74 et la validation loss de 2,84 à 2,04. Sur toute la période observée, <strong>aucune remontée de la validation loss</strong> ne se manifeste — contrairement à ce que nous avons observé sur Gemma (section 5.3), le modèle continue d'améliorer la fonction objectif jusqu'à la fin des 2 epochs, sans signe de sur-apprentissage sur cette plage de mesure.
+  </div>
+
+  <h3>4.3 Test qualitatif immédiat</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Question</th><th>Réponse générée</th></tr></thead>
+      <tbody>
+        <tr><td>Can I breastfeed if I have a fever?</td><td>This is a question about, General. No. Breastfeeding is a healthy and healthy diet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Ce test nous a confirmé que le pipeline fonctionne techniquement de bout en bout, mais nous a aussi montré que la qualité restait limitée sur cet exemple isolé — la formulation est incohérente et la réponse « No » n'est pas justifiée. Nous avons donc jugé nécessaire de poursuivre avec une évaluation systématique sur l'ensemble du jeu de validation.</p>
+
+  <h3>4.4 Évaluation sur le jeu de validation</h3>
+  <p>Nous avons généré une réponse pour chacune des 6 686 questions de validation, par lots de 8, avec une recherche en faisceau (<code>num_beams=4</code>) plutôt qu'un décodage glouton, pour privilégier la qualité des réponses générées.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Métrique</th><th>Score F1 moyen</th></tr></thead>
+      <tbody>
+        <tr><td>ROUGE-1</td><td>0,2104</td></tr>
+        <tr><td>ROUGE-L</td><td>0,1745</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <caption>Résultats par langue.</caption>
+      <thead><tr><th>Langue</th><th>ROUGE-1</th><th>ROUGE-L</th></tr></thead>
+      <tbody>
+        <tr><td>Amh_Eth</td><td>0,0259</td><td>0,0259</td></tr>
+        <tr><td>Lug_Uga</td><td>0,0929</td><td>0,0884</td></tr>
+        <tr><td>Eng_Ken</td><td>0,1560</td><td>0,1182</td></tr>
+        <tr><td>Swa_Ken</td><td>0,1843</td><td>0,1596</td></tr>
+        <tr><td>Eng_Uga</td><td>0,1926</td><td>0,1501</td></tr>
+        <tr><td>Eng_Gha</td><td>0,2759</td><td>0,2329</td></tr>
+        <tr><td>Eng_Eth</td><td>0,3078</td><td>0,2889</td></tr>
+        <tr><td>Aka_Gha</td><td>0,3199</td><td>0,2492</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure>
+    <img src="assets/img/charts/rouge_par_langue_mt5.png" alt="ROUGE par langue, mT5">
+    <figcaption>ROUGE-1 et ROUGE-L par langue — mT5-small (jeu de validation complet).</figcaption>
+  </figure>
+  <div class="callout">
+    <span class="label">Constat</span>
+    L'écart entre la meilleure langue (Aka_Gha, 0,32) et la pire (Amh_Eth, 0,026) est d'un facteur ~12. Nous expliquons principalement cette disparité par le script d'écriture de l'amharique (Ge'ez), très éloigné des scripts latins des autres langues et probablement sous-représenté dans le pré-entraînement de mT5 — une explication cohérente avec le ratio tokens/mot le plus élevé déjà relevé en section 3.3. En inspectant les réponses générées en amharique, nous avons identifié trois symptômes récurrents : répétition de la question au lieu d'y répondre, bascule de langue vers l'anglais en cours de génération, et réponses tautologiques ou en boucle.
+  </div>
+  <p><strong>Ce que nous en retenons pour une itération future :</strong> le modèle fonctionne de façon satisfaisante sur les langues à script latin (akan, anglais, dans une moindre mesure swahili), avec un ROUGE-1 dans la fourchette 0,15–0,32. L'amharique reste le point faible critique et tire la moyenne globale vers le bas — une amélioration ciblée sur cette langue (sur-échantillonnage, epochs supplémentaires, ou vérification du support du script Ge'ez par le tokeniseur) aurait selon nous le plus fort impact sur le score final.</p>
+</section>
+
+<section id="gemma">
+  <h2>5. Modèle 2 — Gemma E2B (QLoRA)</h2>
+  <p>Le second modèle que nous avons testé est <strong>Gemma E2B</strong> (<code>google/gemma-4-E2B-it</code>), environ 5,13 milliards de paramètres — bien plus volumineux que mT5. Compte tenu de cette taille, un fine-tuning complet était hors de portée des GPU dont nous disposions (T4 puis L4 sur Colab), aussi bien en mémoire qu'en temps de calcul : nous avons donc choisi <strong>QLoRA</strong>, détaillée section par section ci-dessous.</p>
+
+  <h3>5.1 Chargement en 4 bits</h3>
+  <figure class="code">
+    <img src="assets/img/code/01_quantification_qlora.png" alt="Configuration BitsAndBytesConfig">
+    <figcaption>Extrait — chargement du modèle de base en 4 bits (NF4).</figcaption>
+  </figure>
+  <p>Nous avons chargé le modèle sur un GPU <strong>L4</strong> (24 Go de VRAM), après avoir commencé le setup initial sur un T4. Ce changement était motivé par deux choses : le L4 supporte nativement le bf16 (architecture Ada Lovelace), contrairement au T4 (Turing), et il offre davantage de marge mémoire. Résultat mesuré : ~6,7 Go de VRAM occupée pour charger un modèle de plus de 5 milliards de paramètres — sans la quantification 4-bit, ce chargement aurait simplement échoué sur le matériel dont nous disposions.</p>
+
+  <h3>5.2 Construction du dataset d'instruction-tuning</h3>
+  <p>Nous avons mis chaque exemple au format « chat » attendu par Gemma. Le prompt d'instruction est rédigé <strong>en français</strong>, mais demande explicitement une réponse dans la langue locale de la question — le modèle est donc entraîné à comprendre une instruction en français et à répondre dans la langue africaine ciblée, jamais en français.</p>
+
+  <p>Nous avons ensuite réservé 5 % du jeu d'entraînement (stratifié par langue) comme jeu de développement interne, pour surveiller le sur-apprentissage pendant l'entraînement sans jamais toucher à <code>Val.csv</code>, que nous voulions garder intact comme validation finale fidèle à l'évaluation Zindi.</p>
+
+  <h4>Rééquilibrage des langues minoritaires</h4>
+  <figure class="code">
+    <img src="assets/img/code/05_reequilibrage_langues.png" alt="Fonction de rééquilibrage des langues">
+    <figcaption>Extrait — sur-échantillonnage plafonné à ×3.</figcaption>
+  </figure>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Langue</th><th>Avant</th><th>Après</th><th>Facteur</th></tr></thead>
+      <tbody>
+        <tr><td>Eng_Uga</td><td>7 243</td><td>7 243</td><td>×1 (référence)</td></tr>
+        <tr><td>Aka_Gha</td><td>4 232</td><td>7 243</td><td>×1,71</td></tr>
+        <tr><td>Eng_Gha</td><td>4 221</td><td>7 243</td><td>×1,72</td></tr>
+        <tr><td>Eng_Eth</td><td>3 719</td><td>7 243</td><td>×1,95</td></tr>
+        <tr><td>Lug_Uga</td><td>3 214</td><td>7 243</td><td>×2,25</td></tr>
+        <tr><td>Eng_Ken</td><td>1 976</td><td>5 928</td><td>×3 (plafond)</td></tr>
+        <tr><td>Swa_Ken</td><td>1 966</td><td>5 898</td><td>×3 (plafond)</td></tr>
+        <tr><td>Amh_Eth</td><td>1 753</td><td>5 259</td><td>×3 (plafond)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Nous avons délibérément plafonné le sur-échantillonnage à 3 fois la taille d'origine de chaque langue, plutôt que de viser un rééquilibrage parfait. La raison : ramener l'amharique (1 753 lignes) au niveau de la langue majoritaire (7 243) l'aurait dupliqué plus de 4 fois, avec un risque réel que le modèle mémorise ces réponses au lieu d'apprendre à généraliser — un risque que nous avons jugé plus grave que le déséquilibre résiduel accepté par ce plafond.</p>
+
+  <h3>5.3 Fine-tuning LoRA/QLoRA</h3>
+  <div class="two-up">
+    <figure class="code">
+      <img src="assets/img/code/02_lora_config.png" alt="Configuration LoRA">
+      <figcaption>Extrait — configuration des adaptateurs LoRA.</figcaption>
+    </figure>
+    <figure class="code">
+      <img src="assets/img/code/03_unwrap_gemma4_clippable.png" alt="Déballage Gemma4ClippableLinear">
+      <figcaption>Extrait — contournement d'une particularité du checkpoint.</figcaption>
+    </figure>
+  </div>
+  <p>Nous avons gelé entièrement le modèle de base et n'avons entraîné que les adaptateurs LoRA, avec un rang <code>r=16</code>. Ce rang nous semblait le bon compromis pour notre cas : assez élevé pour donner à l'adaptateur une vraie capacité d'apprentissage sur une tâche <em>générative</em> multilingue (contrairement à des tâches de classification plus étroites, souvent traitées avec <code>r=4</code> ou <code>r=8</code> dans la littérature), mais sans multiplier inutilement les 29,9 millions de paramètres entraînables sur un budget de calcul limité à un seul GPU Colab, où chaque run supplémentaire pour tester un rang différent representait plusieurs heures. Nous avons fixé <code>lora_alpha=32</code>, soit exactement le double du rang (<code>alpha/r=2</code>) : ce ratio fixe le facteur d'échelle de la mise à jour LoRA (<code>ΔW=(alpha/r)·BA</code>) à une valeur par défaut largement validée dans les exemples officiels PEFT, ce qui nous a évité d'avoir à faire un balayage séparé de ce paramètre en plus du rang.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Paramètres</th><th>Valeur</th></tr></thead>
+      <tbody>
+        <tr><td>Paramètres entraînables</td><td>29 859 840</td></tr>
+        <tr><td>Paramètres totaux</td><td>5 134 157 344</td></tr>
+        <tr><td>Proportion entraînable</td><td>0,58 %</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="code">
+    <img src="assets/img/code/04_prompt_masking_collator.png" alt="Collator de masquage du prompt">
+    <figcaption>Extrait — masquage de la question dans le calcul de la perte.</figcaption>
+  </figure>
+  <p>Nous avons construit un collator qui masque les tokens de la question dans le calcul de la perte, pour que le modèle ne soit noté et corrigé que sur sa capacité à produire la réponse — jamais sur sa capacité à reproduire la question. Nous avons choisi de mesurer la longueur du prompt plutôt que de chercher les tokens spéciaux du template, car ce checkpoint utilise <code>&lt;|turn&gt;...&lt;turn|&gt;</code>, différent du <code>&lt;start_of_turn&gt;</code> d'autres versions de Gemma — une mesure par longueur nous semblait plus robuste face à cette variation.</p>
+
+  <figure>
+    <img src="assets/img/charts/courbe_perte_gemma.png" alt="Courbe de perte Gemma">
+    <figcaption>Courbe de perte — 9 996 steps, 3 epochs, 16h45 d'entraînement sur GPU L4.</figcaption>
+  </figure>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Nous observons un <strong>sur-apprentissage net à partir d'environ le step 6 400</strong>. La loss de validation atteint son minimum (≈0,772) à ce point, puis remonte et se stabilise en plateau (0,78–0,84) jusqu'à la fin, tandis que la loss d'entraînement continue de chuter jusqu'à ~0,24–0,32. Grâce à <code>load_best_model_at_end=True</code>, le checkpoint réellement conservé correspond au step ~6 400, pas à la fin de l'entraînement — les ~5-6 dernières heures de calcul ont donc surtout produit du sur-apprentissage sans bénéfice, un point que nous retenons pour un futur run (arrêt anticipé via <code>early_stopping</code>).
+  </div>
+
+  <h3>5.4 Évaluation (zero-shot vs fine-tuné)</h3>
+  <p>Comme pour mT5 (section 4.4), nous avons généré une réponse pour chacune des 6 686 questions de <code>Val.csv</code>, avec et sans l'adaptateur LoRA, ce qui rend la comparaison entre les deux modèles pleinement rigoureuse — les deux portent désormais sur le même jeu complet.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Métrique</th><th>Zero-shot</th><th>Fine-tuné</th><th>Gain</th></tr></thead>
+      <tbody>
+        <tr><td>ROUGE-1 (F1)</td><td>0,1280</td><td>0,4149</td><td>+0,287 (×3,2)</td></tr>
+        <tr><td>ROUGE-L (F1)</td><td>0,0791</td><td>0,3583</td><td>+0,279 (×4,5)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <caption>Résultats par langue (jeu de validation complet).</caption>
+      <thead><tr><th>Langue</th><th>ROUGE-1 zero-shot</th><th>ROUGE-1 fine-tuné</th><th>ROUGE-L zero-shot</th><th>ROUGE-L fine-tuné</th></tr></thead>
+      <tbody>
+        <tr><td>Amh_Eth</td><td>0,0566</td><td>0,1713</td><td>0,0452</td><td>0,1537</td></tr>
+        <tr><td>Lug_Uga</td><td>0,0050</td><td>0,2215</td><td>0,0046</td><td>0,1859</td></tr>
+        <tr><td>Aka_Gha</td><td>0,1006</td><td>0,2917</td><td>0,0765</td><td>0,2067</td></tr>
+        <tr><td>Eng_Gha</td><td>0,1811</td><td>0,3758</td><td>0,1094</td><td>0,2748</td></tr>
+        <tr><td>Swa_Ken</td><td>0,1949</td><td>0,3873</td><td>0,1180</td><td>0,3147</td></tr>
+        <tr><td>Eng_Ken</td><td>0,1722</td><td>0,4813</td><td>0,0990</td><td>0,4252</td></tr>
+        <tr><td>Eng_Eth</td><td>0,0748</td><td>0,5775</td><td>0,0564</td><td>0,5519</td></tr>
+        <tr><td>Eng_Uga</td><td>0,1798</td><td>0,6241</td><td>0,0985</td><td>0,5886</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure>
+    <img src="assets/img/charts/rouge_par_langue_gemma.png" alt="ROUGE par langue, zero-shot vs fine-tuné">
+    <figcaption>ROUGE-1 et ROUGE-L par langue — zero-shot vs fine-tuné (jeu de validation complet, 6 686 exemples).</figcaption>
+  </figure>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Le fine-tuning apporte un gain net et sans ambiguïté sur l'ensemble du jeu de validation, avec un ROUGE-L multiplié par 4,5 — un gain même supérieur à celui que laissait présager notre premier run sur un échantillon de 500 exemples (ROUGE-1 fine-tuné 0,37 sur l'échantillon contre 0,41 sur le jeu complet) : l'échantillon initial sous-estimait légèrement la qualité réelle du modèle fine-tuné. Le classement par langue confirme un constat déjà établi avec les trois autres approches (sections 2.1, 2.4, 4.4) : <strong>l'amharique reste la langue la plus faible</strong> (ROUGE-1 fine-tuné 0,17), tandis qu'<strong>Eng_Uga</strong>, la langue la mieux dotée du jeu de données, obtient le meilleur score (0,62).
+  </div>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Le cas le plus frappant est le luganda en zero-shot : ROUGE-1 = 0,005, quasiment nul, bien plus bas que les autres langues en zero-shot (0,06 à 0,19). En inspectant les prédictions, nous avons compris pourquoi : plutôt que de produire une réponse hors sujet ou dans la mauvaise langue comme pour les autres langues, le modèle de base <strong>boucle sur un mot répété</strong> (par exemple « n'okwela n'okwela n'okwela... » ou « kye kye kye... »), un mode de dégénérescence classique d'un modèle générique confronté à une langue quasi absente de son pré-entraînement. Le fine-tuning corrige presque entièrement ce problème (ROUGE-1 0,005 → 0,22), ce qui montre que le modèle peut apprendre à produire du luganda correct malgré une base de départ qui n'en connaît pratiquement rien. Nous avons par ailleurs observé, comme sur l'échantillon initial, que le zero-shot souffre aussi de changements de langue non désirés et de méta-commentaires parasites (« Voici une réponse en Akan... »), et que le fine-tuné reproduit occasionnellement un artefact du modèle de base sur un exemple en anglais (référence à « ma dernière mise à jour de connaissances en septembre 2021 »), signe que certains réflexes du pré-entraînement générique subsistent malgré le fine-tuning.
+  </div>
+
+  <h3>5.5 Génération de la soumission finale</h3>
+  <p>Nous avons généré une réponse pour l'intégralité des 2 618 questions de <code>Test.csv</code>, par lots de 8, en décodage déterministe. Nous avons généré et validé le fichier de soumission : 2 618 lignes, sans ID manquant ni dupliqué, sans réponse vide. Conformément au format attendu par Zindi, la même réponse générée est dupliquée dans les trois colonnes cibles (<code>TargetRLF1</code>, <code>TargetR1F1</code>, <code>TargetLLM</code>), puisque notre modèle produit une seule réponse par question, évaluée ensuite selon trois métriques différentes côté plateforme.</p>
+
+  <h3>5.6 Fusion de l'adaptateur en modèle autonome</h3>
+  <figure class="code">
+    <img src="assets/img/code/08_fusion_adaptateur.png" alt="Fusion de l'adaptateur LoRA">
+    <figcaption>Extrait — fusion de l'adaptateur dans les poids du modèle de base.</figcaption>
+  </figure>
+  <p>Nous avons ajouté une dernière étape, de nature infrastructurelle plutôt qu'analytique. Jusque-là, chaque notebook devait retélécharger le modèle de base depuis Hugging Face, le recharger en 4 bits, puis déballer manuellement les 232 couches <code>Gemma4ClippableLinear</code> avant de rattacher l'adaptateur — une séquence lourde à répéter à chaque session. Nous avons donc fusionné l'adaptateur LoRA directement dans les poids du modèle de base, en pleine précision (bf16, non quantifié, nécessaire pour une addition mathématiquement propre des poids). Cette opération, gourmande en mémoire (10,22 Go alloués pour la fusion à elle seule, en plus du modèle bf16 déjà chargé), nous a demandé un GPU <strong>A100 80 Go</strong>, le L4 (24 Go) étant insuffisant pour charger le modèle complet en bf16. Le modèle fusionné (10,24 Go, cohérent avec les ~5,13 milliards de paramètres en bf16) est sauvegardé sur Drive et n'a plus besoin ni de Hugging Face ni de l'adaptateur séparé pour être rechargé.</p>
+  <p>Nous avons vérifié la fusion en rechargeant ce modèle directement depuis Drive (quantifié à nouveau en 4 bits, sans <code>PeftModel</code> ni connexion Hugging Face) puis en générant une réponse test : le modèle répond correctement et dans la bonne langue sur un exemple de santé en swahili, confirmant que la fusion préserve bien le comportement du modèle fine-tuné. Nous avons toutefois relevé, lors de ce rechargement, des avertissements <code>UNEXPECTED</code>/<code>MISSING</code> sur les paramètres des tours audio et vision de Gemma — des composants multimodaux hérités du checkpoint de base, que notre fonction de déballage des couches <code>Gemma4ClippableLinear</code> convertit elle aussi au passage, car elle s'applique à tout le modèle plutôt qu'aux seules couches de langage. Sans conséquence pour nous, puisque notre tâche est purement textuelle et n'a jamais sollicité ces deux tours, mais un point à corriger (limiter le déballage aux couches du modèle de langage) si ce checkpoint devait un jour être réutilisé pour de l'audio ou de l'image.</p>
+
+  <h3>5.7 Démo en direct</h3>
+  <p>Pour la soutenance, nous avons construit une interface de test en direct (Gradio), permettant de taper une question de santé dans n'importe laquelle des 5 langues et d'obtenir la réponse du modèle fine-tuné en streaming (mot par mot), avec une case à cocher pour comparer en parallèle avec la version avant fine-tuning. Nous avons retiré le sélecteur de langue de réponse initialement prévu : en Phase 2, la langue passée au prompt d'instruction était toujours celle de la question elle-même, jamais une langue cible différente — le modèle n'a donc jamais appris à traduire vers une langue distincte de celle de la question, et un sélecteur qui laisserait croire le contraire aurait été trompeur. Le modèle répond simplement dans la langue de la question posée.</p>
+
+  <figure>
+    <img src="assets/img/demo/demo_gradio_screenshot.png" alt="Capture de la démo Gradio en fonctionnement">
+    <figcaption>Capture d'écran de la démo en fonctionnement — question posée en akan, comparaison fine-tuné / zero-shot générée en parallèle.</figcaption>
+  </figure>
+
+  <p>Nous avons testé la démo en conditions réelles avant de la considérer prête pour la soutenance.</p>
+  <div class="callout">
+    <span class="label">Constat</span>
+    Le fine-tuné et le zero-shot ne peuvent pas être générés en parallèle sur un seul objet modèle partagé : <code>model.disable_adapter()</code> est une bascule globale sur cet objet, pas thread-safe. Nous avons donc chargé une deuxième instance complète du modèle de base (sans adaptateur), dédiée au zero-shot — 13,65 Go de VRAM mesurés pour les deux modèles ensemble (GPU L4), contre ~6,7 Go pour un seul. Chaque panneau se remplit dès que sa génération progresse, sans attendre l'autre : sur la capture ci-dessus, les deux réponses affichent exactement le même temps de génération (95,9 s), preuve qu'elles tournent bien simultanément. Ce n'est toutefois pas gratuit : les deux générations se partagent le même GPU, donc chacune est individuellement plus lente que si elle tournait seule — le gain n'est pas sur le temps de calcul total, mais sur l'expérience perçue : les deux réponses progressent sous les yeux de l'utilisateur au lieu qu'un panneau reste vide pendant que l'autre tourne seul.
+  </div>
+  <p>Ce test a aussi reproduit, sur un nouvel exemple, le mode de dégénérescence déjà observé en section 5.4 sur le luganda : en akan zero-shot, le modèle boucle sur un mot répété (« sɛn ɛyɛ sɛn ɛyɛ... ») au lieu de produire une réponse, alors que la version fine-tunée répond correctement et de façon cohérente à la même question — une confirmation supplémentaire, sur un exemple concret et en conditions réelles, du gain qualitatif mesuré en section 5.4.</p>
+  <p>Nous avons volontairement limité cette démo à Gemma dans un premier temps : comparer les quatre approches en direct demanderait de centraliser les checkpoints de mT5, TF-IDF et NLLB, développés séparément par les membres de l'équipe, sur un même environnement — un chantier que nous envisageons pour une itération future.</p>
+</section>
+
+<section id="comparaison">
+  <h2>6. Comparaison des modèles</h2>
+  <p>Les deux modèles sont désormais évalués sur le même jeu de validation complet (6 686 exemples), ce qui rend la comparaison chiffrée ci-dessous pleinement rigoureuse.</p>
+  <figure>
+    <img src="assets/img/charts/comparaison_globale.png" alt="Comparaison globale des approches">
+    <figcaption>Comparaison ROUGE-1 / ROUGE-L de toutes les approches testées (Val.csv complet).</figcaption>
+  </figure>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Critère</th><th>mT5-small</th><th>Gemma E2B (QLoRA)</th></tr></thead>
+      <tbody>
+        <tr><td>Paramètres totaux</td><td>300 M</td><td>5,13 Md</td></tr>
+        <tr><td>Paramètres entraînés</td><td>300 M (100 %)</td><td>29,9 M (0,58 %)</td></tr>
+        <tr><td>Méthode d'adaptation</td><td>Full fine-tuning</td><td>QLoRA (4-bit + LoRA)</td></tr>
+        <tr><td>Durée d'entraînement</td><td>~2h33</td><td>~16h45</td></tr>
+        <tr><td>Overfitting observé</td><td>Non (sur la plage mesurée)</td><td>Oui (à partir du step ~6 400)</td></tr>
+        <tr><td>Taille échantillon éval.</td><td>6 686 (Val complet)</td><td>6 686 (Val complet)</td></tr>
+        <tr><td>ROUGE-1 (moyen)</td><td>0,2104</td><td>0,4149</td></tr>
+        <tr><td>ROUGE-L (moyen)</td><td>0,1745</td><td>0,3583</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Nos deux modèles fine-tunés dépassent nettement les baselines de départ fournies par Zindi (TF-IDF 0,41/0,36 mis à part — voir la réserve méthodologique en section 2.1) : mT5 (0,21/0,17) et surtout Gemma fine-tuné (0,41/0,36) font mieux que le LLM fine-tuné du notebook de démarrage (0,32/0,25), ce qui nous conforte dans l'idée que notre travail d'exploration, de rééquilibrage des langues et de formatage des prompts (sections 3 à 5) a porté ses fruits par rapport à une adaptation plus sommaire du template de départ. Gemma dépasse mT5 sur les deux métriques, avec un écart substantiel (+0,20 ROUGE-1, +0,18 ROUGE-L) — un résultat cohérent avec sa taille (17 fois plus de paramètres), mais obtenu pour un coût d'entraînement environ 6,5 fois plus long et une adaptation de seulement 0,58 % des paramètres, ce qui nous semble être le compromis le plus intéressant des deux si les ressources de calcul le permettent.</p>
+  <div class="callout">
+    <span class="label">Constat</span>
+    En regardant uniquement les chiffres du graphique ci-dessus, le TF-IDF (0,42/0,37) devance même Gemma fine-tuné — mais nous ne le considérons pas comme le meilleur modèle du projet. La raison, déjà posée en section 2.1 : le TF-IDF ne <em>génère</em> aucune réponse, il recopie mot pour mot la question d'entraînement la plus proche. Ce chevauchement lexical parfait gonfle mécaniquement son ROUGE, un score qui mesure justement un chevauchement lexical — mais rien ne garantit que la réponse recopiée soit médicalement adaptée à une question inédite, contrairement aux modèles génératifs qui produisent une réponse pensée pour la question posée. Entre les approches réellement génératives (NLLB, mT5, Gemma), c'est donc <strong>Gemma fine-tuné qui constitue en pratique le meilleur modèle de ce projet</strong>, et de loin : +0,097 ROUGE-1 sur le meilleur des deux autres (NLLB fine-tuné, 0,3176).
+  </div>
+</section>
+
+<section id="difficultes">
+  <h2>7. Difficultés techniques rencontrées et résolues</h2>
+  <p>Nous documentons ici trois difficultés concrètes que nous avons rencontrées en cours de route, et la façon dont nous les avons résolues — elles nous semblent représentatives du travail d'ingénierie qu'a demandé ce projet, au-delà du seul entraînement des modèles.</p>
+
+  <h3>7.1 Une classe non reconnue par PEFT</h3>
+  <p>Les couches d'attention de ce checkpoint Gemma sont enveloppées dans une classe <code>Gemma4ClippableLinear</code> (clipping des activations) que la bibliothèque PEFT ne reconnaît pas pour y attacher un adaptateur LoRA. Nous avons résolu cela en déballant ces couches vers leur <code>Linear4bit</code> interne avant de configurer LoRA — ce qui désactive ce clipping pendant l'entraînement. Nous avons surveillé ce risque de près : si la loss avait divergé ou produit des NaN, cela aurait signalé que ce clipping était nécessaire ; ce n'est pas ce que nous avons observé, la loss ayant décru normalement sur tout l'entraînement.</p>
+
+  <h3>7.2 Une évaluation de plusieurs heures perdue en une déconnexion</h3>
+  <figure class="code">
+    <img src="assets/img/code/07_reprise_checkpoint_eval.png" alt="Mécanisme de reprise sur checkpoint">
+    <figcaption>Extrait — reprise automatique après déconnexion Colab.</figcaption>
+  </figure>
+  <p>Notre premier run d'évaluation sur l'ensemble de <code>Val.csv</code> s'est arrêté après plus de 4 000 générations, à la suite d'une déconnexion de la session Colab — et nous avons perdu l'intégralité de cette progression. La cause : notre fonction de génération accumulait toutes les réponses en mémoire et n'écrivait rien sur disque avant la toute fin du notebook. Nous avons corrigé cela en sauvegardant chaque batch au fur et à mesure sur Drive, avec un mécanisme de reprise qui relit les prédictions déjà générées et ne recalcule que ce qui manque — un run interrompu ne nous coûte plus désormais qu'un batch, jamais des heures de calcul.</p>
+
+  <h3>7.3 Une progression de GPU dictée par la mémoire disponible</h3>
+  <p>Nous avons changé de GPU à trois reprises au cours du projet, chaque fois pour une raison précise : le T4 initial (16 Go) pour le setup et l'exploration ; le L4 (24 Go, bf16 natif) pour l'entraînement QLoRA, après avoir constaté qu'un batch de 8 provoquait un OOM sur le calcul de la perte (logits sur tout le vocabulaire) ; l'A100 (80 Go) pour la fusion de l'adaptateur en pleine précision (section 5.6), où même le L4 s'est révélé insuffisant pour charger le modèle complet en bf16 non quantifié.</p>
+</section>
+
+<section id="conclusion">
+  <h2>8. Conclusion et recommandations</h2>
+  <p>Ce projet nous a permis de mettre en œuvre et de comparer deux approches de fine-tuning de modèles de langage pour la tâche de questions-réponses médicales multilingues du challenge Zindi : un full fine-tuning d'un modèle compact (mT5-small) et une adaptation QLoRA d'un modèle bien plus volumineux (Gemma E2B). Partis du notebook de démarrage fourni par l'organisateur, dont le LLM baseline fine-tuné plafonnait à 0,32/0,25 de ROUGE — en dessous même du simple retrieval TF-IDF — nous avons développé deux pipelines complets allant nettement plus loin. Les deux pipelines partagent une même base de données, explorée et diagnostiquée en commun, ce qui nous a permis d'identifier dès la phase exploratoire des signaux (déséquilibre des langues, hétérogénéité de la tokenisation) que nous avons retrouvés, de façon cohérente, dans les résultats d'évaluation des deux modèles — et même dans ceux des baselines Zindi. Nous avons par ailleurs étendu l'évaluation de Gemma à l'ensemble du jeu de validation (section 5.4), ce qui nous a permis d'aboutir à une comparaison chiffrée pleinement rigoureuse entre les deux modèles (section 6) : Gemma fine-tuné (0,41/0,36) devance mT5 (0,21/0,17) sur les deux métriques.</p>
+
+  <h3>Recommandations pour une itération future</h3>
+  <ul>
+    <li><strong>Cibler l'amharique et le luganda en priorité</strong> : sur-échantillonnage renforcé, données supplémentaires, voire vérification/adaptation du tokeniseur pour mieux supporter le script Ge'ez (amharique) ;</li>
+    <li><strong>Introduire un arrêt anticipé (early stopping)</strong> pour Gemma, afin d'éviter les ~5-6 heures de calcul supplémentaires qui ont surtout produit du sur-apprentissage sans bénéfice sur ce run ;</li>
+    <li><strong>Compléter l'évaluation automatique (ROUGE) par une évaluation humaine ou par un LLM juge</strong>, le score ROUGE ne mesurant qu'un chevauchement lexical et non la fiabilité médicale réelle des réponses générées ;</li>
+    <li><strong>Pour la mise en production</strong>, nous privilégierions le modèle offrant le meilleur compromis qualité / coût de calcul selon le contexte — Gemma fusionné en modèle autonome pour une meilleure qualité, ou mT5 pour un déploiement plus léger et rapide à entraîner.</li>
+  </ul>
+</section>
+
+</div>
+
+<footer class="colophon">
+  Projet réalisé par Andil Mchangama, Nasma Youssouf M'madi, Abdoulaye Diouf, Harouna Mbaye et Hamidou Mbodji —
+  Master 2 Business Intelligence, Université Cheikh Anta Diop de Dakar — Cours de NLP.
+</footer>
+
+</body>
+</html>
