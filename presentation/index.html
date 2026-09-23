@@ -26,7 +26,6 @@
     <span><b>Harouna Mbaye</b></span>
     <span><b>Hamidou Mbodji</b></span>
   </div>
-  <div class="brand-mark">Soutenance · 15 min</div>
 </section>
 
 <!-- 2 — CONTEXTE -->
@@ -118,15 +117,24 @@
   <div class="presenter-tag"><span class="dot"></span>Harouna</div>
   <div class="eyebrow">Modèle 1</div>
   <h2 class="slide-title">mT5-small — comment on l'a entraîné</h2>
-  <div class="stat-row">
-    <div class="stat-block"><div class="num">300<small>M</small></div><div class="lbl">paramètres, <b>tous</b> mis à jour (full fine-tuning)</div></div>
-    <div class="stat-block"><div class="num">2h33</div><div class="lbl">d'entraînement — 2 epochs, 7 454 steps, GPU T4</div></div>
-    <div class="stat-block"><div class="num">0</div><div class="lbl">signe de sur-apprentissage sur la plage mesurée</div></div>
+  <div class="cols">
+    <div class="col">
+      <div class="stat-row" style="flex-direction:column; gap:12px;">
+        <div class="stat-block"><div class="num">300<small>M</small></div><div class="lbl">paramètres, <b>tous</b> mis à jour (full fine-tuning)</div></div>
+        <div class="stat-block"><div class="num">2h33</div><div class="lbl">d'entraînement — 2 epochs, 7 454 steps, GPU T4</div></div>
+      </div>
+      <ul class="bullets" style="margin-top:14px;">
+        <li>Optimiseur <b>Adafactor</b> — cohérent avec le pré-entraînement de toute la famille T5.</li>
+        <li>Modèle compact : abordable sur un seul GPU Colab, contrairement à Gemma E2B.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="card">
+        <img src="assets/img/courbe_perte_mt5.png" alt="Courbe de perte mT5">
+        <div class="card-cap">Aucune remontée de la loss d'éval sur les 7 454 steps</div>
+      </div>
+    </div>
   </div>
-  <ul class="bullets">
-    <li>Optimiseur <b>Adafactor</b> — cohérent avec l'optimiseur utilisé pour le pré-entraînement de toute la famille T5.</li>
-    <li>Modèle compact : abordable sur un seul GPU Colab, contrairement à Gemma E2B.</li>
-  </ul>
 </section>
 
 <!-- BLOC 3 — NASMA (~3 min) : slides 7-9 -->
@@ -136,11 +144,21 @@
   <div class="presenter-tag"><span class="dot"></span>Nasma</div>
   <div class="eyebrow">Modèle 1 — résultats</div>
   <h2 class="slide-title">mT5 : des résultats solides, sans surprise sur l'amharique</h2>
-  <div class="stat-row">
-    <div class="stat-block"><div class="num">0,21<small>ROUGE-1</small></div><div class="lbl">sur le jeu de validation complet (6 686 ex.)</div></div>
-    <div class="stat-block"><div class="num">0,17<small>ROUGE-L</small></div><div class="lbl">amharique = langue la plus faible (0,026)</div></div>
+  <div class="cols">
+    <div class="col">
+      <div class="stat-row" style="flex-direction:column; gap:12px;">
+        <div class="stat-block"><div class="num">0,21<small>ROUGE-1</small></div><div class="lbl">sur le jeu de validation complet (6 686 ex.)</div></div>
+        <div class="stat-block"><div class="num">0,17<small>ROUGE-L</small></div><div class="lbl">amharique = langue la plus faible (0,026)</div></div>
+      </div>
+      <p class="lede" style="margin-top:16px; font-size:16px;">Écart d'un facteur <b>~12</b> entre la meilleure langue (Aka_Gha) et la pire (Amh_Eth) — le script Ge'ez, très éloigné des scripts latins, est probablement sous-représenté dans le pré-entraînement.</p>
+    </div>
+    <div class="col">
+      <div class="card">
+        <img src="assets/img/rouge_par_langue_mt5.png" alt="ROUGE par langue mT5">
+        <div class="card-cap">ROUGE-1 / ROUGE-L par langue — mT5, Val.csv complet</div>
+      </div>
+    </div>
   </div>
-  <p class="lede">L'écart entre la meilleure langue (Aka_Gha, 0,32) et la pire (Amh_Eth, 0,026) est d'un facteur ~12 — le script Ge'ez de l'amharique est très éloigné des scripts latins et probablement sous-représenté dans le pré-entraînement de mT5.</p>
 </section>
 
 <!-- 8 — GEMMA QLoRA -->
@@ -148,15 +166,24 @@
   <div class="presenter-tag"><span class="dot"></span>Nasma</div>
   <div class="eyebrow">Modèle 2</div>
   <h2 class="slide-title">Et si on passait à un modèle beaucoup plus grand ?</h2>
-  <div class="stat-row">
-    <div class="stat-block"><div class="num">5,13<small>Md</small></div><div class="lbl">paramètres Gemma E2B — 17× mT5</div></div>
-    <div class="stat-block"><div class="num">0,58<small>%</small></div><div class="lbl">paramètres réellement entraînés (29,9M, via LoRA)</div></div>
-    <div class="stat-block"><div class="num">16h45</div><div class="lbl">d'entraînement — 6,5× plus long que mT5</div></div>
+  <div class="cols">
+    <div class="col">
+      <div class="stat-row" style="flex-direction:column; gap:12px;">
+        <div class="stat-block"><div class="num">5,13<small>Md</small></div><div class="lbl">paramètres Gemma E2B — 17× mT5</div></div>
+        <div class="stat-block"><div class="num">0,58<small>%</small></div><div class="lbl">paramètres réellement entraînés (29,9M, via LoRA)</div></div>
+        <div class="stat-block"><div class="num">16h45</div><div class="lbl">d'entraînement — 6,5× plus long que mT5</div></div>
+      </div>
+      <ul class="bullets" style="margin-top:14px;">
+        <li>Fine-tuning complet hors de portée des GPU disponibles — <b>quantification 4-bit + LoRA</b> (r=16) à la place.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="card">
+        <img src="assets/img/courbe_perte_gemma.png" alt="Courbe de perte Gemma">
+        <div class="card-cap">9 996 steps, 3 epochs, 16h45 — la loss d'éval remonte après ~6 400</div>
+      </div>
+    </div>
   </div>
-  <ul class="bullets">
-    <li>Fine-tuning complet hors de portée des GPU disponibles (T4/L4) — <b>quantification 4-bit + adaptateurs LoRA</b> (r=16) à la place.</li>
-    <li>Sur-apprentissage net détecté au step <b>~6 400</b> — le meilleur checkpoint a été conservé automatiquement.</li>
-  </ul>
 </section>
 
 <!-- 9 — GEMMA RESULTATS -->
@@ -164,18 +191,31 @@
   <div class="presenter-tag"><span class="dot"></span>Nasma</div>
   <div class="eyebrow">Modèle 2 — résultats</div>
   <h2 class="slide-title">Un gain massif après fine-tuning</h2>
-  <div class="gain-row">
-    <div class="gain-box"><div class="gv before">0,13</div><div class="gl">ROUGE-1 zero-shot</div></div>
-    <div class="gain-arrow">→</div>
-    <div class="gain-box"><div class="gv after">0,41</div><div class="gl">ROUGE-1 fine-tuné (×3,2)</div></div>
-    <div class="gain-arrow" style="margin-left:32px;">→</div>
-    <div class="gain-box"><div class="gv before">0,08</div><div class="gl">ROUGE-L zero-shot</div></div>
-    <div class="gain-arrow">→</div>
-    <div class="gain-box"><div class="gv after">0,36</div><div class="gl">ROUGE-L fine-tuné (×4,5)</div></div>
-  </div>
-  <div class="verdict">
-    <div class="verdict-label">Découverte marquante</div>
-    <p>En zero-shot, le luganda <em>dégénère en boucle</em> (« n'okwela n'okwela... », ROUGE-1 = 0,005) — le fine-tuning corrige presque tout le problème (→ 0,22).</p>
+  <div class="cols">
+    <div class="col">
+      <div class="gain-row" style="flex-direction:column; align-items:flex-start; gap:16px; margin:6px 0 18px;">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="gain-box"><div class="gv before">0,13</div><div class="gl">ROUGE-1<br>zero-shot</div></div>
+          <div class="gain-arrow">→</div>
+          <div class="gain-box"><div class="gv after">0,41</div><div class="gl">fine-tuné<br>(×3,2)</div></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="gain-box"><div class="gv before">0,08</div><div class="gl">ROUGE-L<br>zero-shot</div></div>
+          <div class="gain-arrow">→</div>
+          <div class="gain-box"><div class="gv after">0,36</div><div class="gl">fine-tuné<br>(×4,5)</div></div>
+        </div>
+      </div>
+      <div class="verdict" style="margin-top:0; padding:18px 20px;">
+        <div class="verdict-label">Découverte marquante</div>
+        <p style="font-size:16px;">En zero-shot, le luganda <em>dégénère en boucle</em> (« n'okwela n'okwela... », ROUGE-1 = 0,005) — corrigé par le fine-tuning (→ 0,22).</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <img src="assets/img/rouge_par_langue_gemma.png" alt="ROUGE par langue Gemma">
+        <div class="card-cap">Zero-shot vs fine-tuné par langue — Val.csv complet</div>
+      </div>
+    </div>
   </div>
 </section>
 
