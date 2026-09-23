@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soutenance — QA santé multilingue</title>
+<link rel="stylesheet" href="assets/css/slides.css">
+</head>
+<body>
+
+<!-- BLOC 1 — ABDOULAYE (~3 min) : slides 1-3 -->
+
+<!-- 1 — TITRE -->
+<section class="slide title-slide">
+  <div class="presenter-tag"><span class="dot"></span>Abdoulaye</div>
+  <div class="logo-row">
+    <img src="assets/img/ucad_logo.svg" alt="UCAD">
+    <span class="uni">Université Cheikh Anta Diop de Dakar<br><b>Master 2 Business Intelligence</b> — Cours de NLP</span>
+  </div>
+  <h1>Répondre à des questions de santé en langues africaines</h1>
+  <p class="subtitle">Challenge Zindi — TF-IDF, NLLB, mT5-small et Gemma E2B (QLoRA) comparés sur 5 langues</p>
+  <div class="team-row">
+    <span><b>Andil Mchangama</b></span>
+    <span><b>Nasma Youssouf M'madi</b></span>
+    <span><b>Abdoulaye Diouf</b></span>
+    <span><b>Harouna Mbaye</b></span>
+    <span><b>Hamidou Mbodji</b></span>
+  </div>
+  <div class="brand-mark">Soutenance · 15 min</div>
+</section>
+
+<!-- 2 — CONTEXTE -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Abdoulaye</div>
+  <div class="eyebrow">Contexte</div>
+  <h2 class="slide-title">Une réponse médicale n'est utile que si elle est comprise</h2>
+  <div class="stat-row">
+    <div class="stat-block"><div class="num">5</div><div class="lbl">langues : anglais, akan, luganda, swahili, amharique</div></div>
+    <div class="stat-block"><div class="num">8</div><div class="lbl">sous-ensembles pays/langue (ex. Amh_Eth)</div></div>
+    <div class="stat-block"><div class="num">39K</div><div class="lbl">questions de santé au total (Train + Val + Test)</div></div>
+  </div>
+  <ul class="bullets">
+    <li>Le challenge Zindi vise à répondre à des questions de santé <b>dans la langue locale</b> de l'utilisateur, pas seulement en anglais.</li>
+    <li>Une bonne partie des populations concernées ne lit ni n'écrit l'anglais couramment — une réponse mal comprise perd son utilité, même juste cliniquement.</li>
+  </ul>
+</section>
+
+<!-- 3 — DEMARCHE -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Abdoulaye</div>
+  <div class="eyebrow">Notre démarche</div>
+  <h2 class="slide-title">Trois approches, du plus simple au plus ambitieux</h2>
+  <div class="cols">
+    <div class="col">
+      <span class="pill tfidf">Baselines Zindi</span>
+      <ul class="bullets">
+        <li>Retrieval <b>TF-IDF</b> et LLM <b>NLLB-200</b> — code fourni par l'organisateur, exécuté tel quel comme point de repère indépendant.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <span class="pill mt5">Modèle 1</span>
+      <ul class="bullets">
+        <li><b>mT5-small</b> (300M) en full fine-tuning — recommandé par Zindi pour un premier run rapide, abordable sur un seul GPU.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <span class="pill gemma">Modèle 2</span>
+      <ul class="bullets">
+        <li><b>Gemma E2B</b> (5,13Md) adapté par <b>QLoRA</b> — approche plus ambitieuse, budget de calcul bien plus élevé.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- BLOC 2 — HAROUNA (~3 min) : slides 4-6 -->
+
+<!-- 4 — BASELINES ZINDI -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Harouna</div>
+  <div class="eyebrow">Point de départ</div>
+  <h2 class="slide-title">Les baselines fournies par Zindi</h2>
+  <table class="cmp">
+    <tr><th>Baseline</th><th>ROUGE-1</th><th>ROUGE-L</th><th>Constat</th></tr>
+    <tr><td class="name">TF-IDF retrieval</td><td class="metric">0,4207</td><td class="metric">0,3655</td><td>Score élevé mais trompeur — recopie une réponse humaine, ne génère rien</td></tr>
+    <tr><td class="name">NLLB zero-shot</td><td class="metric">0,0074</td><td class="metric">0,0071</td><td>Quasi nul — c'est un traducteur, pas un modèle de QA, et le prompt n'a aucune instruction</td></tr>
+    <tr><td class="name">NLLB fine-tuné</td><td class="metric">0,3176</td><td class="metric">0,2484</td><td>Bond considérable après fine-tuning, mais reste sous le TF-IDF</td></tr>
+  </table>
+  <p class="lede" style="margin-top:22px;">➜ Le notebook de démarrage recommandait mT5 pour aller plus loin — c'est ce qui a motivé notre premier modèle.</p>
+</section>
+
+<!-- 5 — DONNEES -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Harouna</div>
+  <div class="eyebrow">Exploration des données</div>
+  <h2 class="slide-title">Un jeu de données propre, mais déséquilibré</h2>
+  <div class="cols">
+    <div class="col">
+      <div class="stat-row" style="flex-direction:column;">
+        <div class="stat-block"><div class="num">29 815</div><div class="lbl">questions d'entraînement</div></div>
+      </div>
+      <ul class="bullets" style="margin-top:14px;">
+        <li>Aucune valeur manquante, aucun doublon d'ID — pas de nettoyage structurel nécessaire.</li>
+        <li><b>Eng_Uga</b> pèse plus de <b>4×</b> la langue la moins représentée (Amh_Eth).</li>
+        <li>Tokeniseurs testés : jusqu'à <b>3 tokens/mot</b> pour le luganda et l'amharique, contre 1,2 pour l'anglais.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="card">
+        <img src="assets/img/distribution_langues.png" alt="Distribution des langues">
+        <div class="card-cap">Distribution des langues, Train vs Val</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 — mT5 APPROCHE -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Harouna</div>
+  <div class="eyebrow">Modèle 1</div>
+  <h2 class="slide-title">mT5-small — comment on l'a entraîné</h2>
+  <div class="stat-row">
+    <div class="stat-block"><div class="num">300<small>M</small></div><div class="lbl">paramètres, <b>tous</b> mis à jour (full fine-tuning)</div></div>
+    <div class="stat-block"><div class="num">2h33</div><div class="lbl">d'entraînement — 2 epochs, 7 454 steps, GPU T4</div></div>
+    <div class="stat-block"><div class="num">0</div><div class="lbl">signe de sur-apprentissage sur la plage mesurée</div></div>
+  </div>
+  <ul class="bullets">
+    <li>Optimiseur <b>Adafactor</b> — cohérent avec l'optimiseur utilisé pour le pré-entraînement de toute la famille T5.</li>
+    <li>Modèle compact : abordable sur un seul GPU Colab, contrairement à Gemma E2B.</li>
+  </ul>
+</section>
+
+<!-- BLOC 3 — NASMA (~3 min) : slides 7-9 -->
+
+<!-- 7 — mT5 RESULTATS -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Nasma</div>
+  <div class="eyebrow">Modèle 1 — résultats</div>
+  <h2 class="slide-title">mT5 : des résultats solides, sans surprise sur l'amharique</h2>
+  <div class="stat-row">
+    <div class="stat-block"><div class="num">0,21<small>ROUGE-1</small></div><div class="lbl">sur le jeu de validation complet (6 686 ex.)</div></div>
+    <div class="stat-block"><div class="num">0,17<small>ROUGE-L</small></div><div class="lbl">amharique = langue la plus faible (0,026)</div></div>
+  </div>
+  <p class="lede">L'écart entre la meilleure langue (Aka_Gha, 0,32) et la pire (Amh_Eth, 0,026) est d'un facteur ~12 — le script Ge'ez de l'amharique est très éloigné des scripts latins et probablement sous-représenté dans le pré-entraînement de mT5.</p>
+</section>
+
+<!-- 8 — GEMMA QLoRA -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Nasma</div>
+  <div class="eyebrow">Modèle 2</div>
+  <h2 class="slide-title">Et si on passait à un modèle beaucoup plus grand ?</h2>
+  <div class="stat-row">
+    <div class="stat-block"><div class="num">5,13<small>Md</small></div><div class="lbl">paramètres Gemma E2B — 17× mT5</div></div>
+    <div class="stat-block"><div class="num">0,58<small>%</small></div><div class="lbl">paramètres réellement entraînés (29,9M, via LoRA)</div></div>
+    <div class="stat-block"><div class="num">16h45</div><div class="lbl">d'entraînement — 6,5× plus long que mT5</div></div>
+  </div>
+  <ul class="bullets">
+    <li>Fine-tuning complet hors de portée des GPU disponibles (T4/L4) — <b>quantification 4-bit + adaptateurs LoRA</b> (r=16) à la place.</li>
+    <li>Sur-apprentissage net détecté au step <b>~6 400</b> — le meilleur checkpoint a été conservé automatiquement.</li>
+  </ul>
+</section>
+
+<!-- 9 — GEMMA RESULTATS -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Nasma</div>
+  <div class="eyebrow">Modèle 2 — résultats</div>
+  <h2 class="slide-title">Un gain massif après fine-tuning</h2>
+  <div class="gain-row">
+    <div class="gain-box"><div class="gv before">0,13</div><div class="gl">ROUGE-1 zero-shot</div></div>
+    <div class="gain-arrow">→</div>
+    <div class="gain-box"><div class="gv after">0,41</div><div class="gl">ROUGE-1 fine-tuné (×3,2)</div></div>
+    <div class="gain-arrow" style="margin-left:32px;">→</div>
+    <div class="gain-box"><div class="gv before">0,08</div><div class="gl">ROUGE-L zero-shot</div></div>
+    <div class="gain-arrow">→</div>
+    <div class="gain-box"><div class="gv after">0,36</div><div class="gl">ROUGE-L fine-tuné (×4,5)</div></div>
+  </div>
+  <div class="verdict">
+    <div class="verdict-label">Découverte marquante</div>
+    <p>En zero-shot, le luganda <em>dégénère en boucle</em> (« n'okwela n'okwela... », ROUGE-1 = 0,005) — le fine-tuning corrige presque tout le problème (→ 0,22).</p>
+  </div>
+</section>
+
+<!-- BLOC 4 — ANDIL (~3 min) : slides 10-12 -->
+
+<!-- 10 — COMPARAISON / VERDICT -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Andil</div>
+  <div class="eyebrow">Comparaison finale</div>
+  <h2 class="slide-title">Gemma fine-tuné : le meilleur modèle génératif</h2>
+  <div class="cols">
+    <div class="col">
+      <div class="card">
+        <img src="assets/img/comparaison_globale.png" alt="Comparaison globale">
+      </div>
+    </div>
+    <div class="col">
+      <div class="verdict" style="margin-top:0;">
+        <div class="verdict-label">Verdict</div>
+        <p>Le TF-IDF affiche un score plus haut, mais il <em>recopie</em> — il ne génère rien. Entre les approches génératives, <em>Gemma devance NLLB (+0,10) et mT5 (+0,20)</em> sur ROUGE-1.</p>
+      </div>
+      <ul class="bullets" style="margin-top:18px;">
+        <li>Coût : <b>6,5×</b> plus de temps d'entraînement pour <b>17×</b> plus de paramètres</li>
+        <li>mT5 reste le choix le plus léger à déployer/réentraîner</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 11 — DIFFICULTES -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Andil</div>
+  <div class="eyebrow">Difficultés techniques</div>
+  <h2 class="slide-title">Ce qu'on a dû résoudre en cours de route</h2>
+  <ul class="bullets">
+    <li><b>PEFT ne reconnaissait pas</b> la classe <code>Gemma4ClippableLinear</code> de Gemma — déballage vers <code>Linear4bit</code> avant d'attacher LoRA.</li>
+    <li><b>4 000+ générations perdues</b> après une déconnexion Colab (rien n'était sauvegardé) — checkpoint JSONL résumable, plus jamais qu'un batch perdu.</li>
+    <li><b>3 GPU différents</b> selon les besoins mémoire : T4 → L4 (bf16, QLoRA) → A100 80 Go (fusion de l'adaptateur en pleine précision).</li>
+  </ul>
+</section>
+
+<!-- 12 — CONCLUSION -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Andil</div>
+  <div class="eyebrow">Conclusion</div>
+  <h2 class="slide-title">Ce que nous retenons</h2>
+  <ul class="bullets">
+    <li>Deux pipelines complets développés, partant d'une baseline Zindi plafonnant à 0,32/0,25 — <b>largement dépassée par Gemma</b> (0,41/0,36).</li>
+    <li><b>Amharique et luganda</b> restent structurellement les langues les plus difficiles, sur les 4 approches testées.</li>
+    <li>Recommandations : <b>early stopping</b> pour Gemma, cibler les langues faibles en priorité, compléter ROUGE par une évaluation humaine.</li>
+  </ul>
+</section>
+
+<!-- BLOC 5 — HAMIDOU (~3 min, démo à la fin) : slides 13-14 -->
+
+<!-- 13 — DEMO -->
+<section class="slide">
+  <div class="presenter-tag"><span class="dot"></span>Hamidou</div>
+  <div class="eyebrow">Démonstration</div>
+  <h2 class="slide-title">Pour finir — démo en direct sur Gemma E2B</h2>
+  <div class="cols">
+    <div class="col">
+      <div class="card">
+        <img src="assets/img/demo_gradio_screenshot.png" alt="Démo Gradio">
+      </div>
+    </div>
+    <div class="col">
+      <ul class="bullets">
+        <li>Interface Gradio, réponse générée en <b>streaming</b> (mot par mot)</li>
+        <li>Fine-tuné et zero-shot générés <b>en parallèle</b>, sur deux modèles séparés en mémoire</li>
+        <li>Testée en conditions réelles — fonctionne, y compris la reproduction du bug de répétition en zero-shot</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 14 — MERCI -->
+<section class="slide closing">
+  <div class="presenter-tag"><span class="dot"></span>Hamidou</div>
+  <img src="assets/img/ucad_logo.svg" alt="UCAD" style="width:64px;height:64px;margin-bottom:28px;">
+  <h1>Merci — Questions ?</h1>
+  <p class="subtitle">Andil Mchangama · Nasma Youssouf M'madi · Abdoulaye Diouf · Harouna Mbaye · Hamidou Mbodji</p>
+</section>
+
+</body>
+</html>
